@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bản đồ Ranh giới Hành chính Việt Nam</title>
+    <title>Dashboard Bản đồ Việt Nam - Tối giản</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     
@@ -12,100 +12,261 @@
             margin: 0;
             padding: 0;
             height: 100%;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #f8fafc; /* Nền tổng thể của trang web */
         }
-        /* Thiết lập bản đồ hiển thị tràn toàn màn hình */
-        #map {
-            height: 100%;
+
+        /* Khung chứa chia làm 2 cột bằng Flexbox */
+        .dashboard-wrapper {
+            display: flex;
             width: 100%;
+            height: 100%;
         }
-        /* Tùy chỉnh giao diện hộp thông tin nhỏ khi click */
-        .leaflet-popup-content {
+
+        /* CỘT TRÁI: KHUNG CHỨA BẢN ĐỒ */
+        #map {
+            width: 65%; /* Bản đồ chiếm 65% chiều rộng bên trái */
+            height: 100%;
+            background-color: #ffffff !important; /* Đổi nền mặc định của bản đồ thành màu trắng tinh */
+        }
+
+        /* CỘT PHẢI: TIÊU ĐỀ VÀ BỘ LỌC */
+        #sidebar-right {
+            width: 35%; /* Bộ lọc chiếm 35% chiều rộng bên phải */
+            background: #ffffff;
+            border-left: 1px solid #e2e8f0; /* Đường kẻ phân cách mỏng */
+            padding: 35px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            z-index: 999;
+        }
+
+        #sidebar-right h1 {
+            font-size: 20px;
+            color: #0f172a;
+            margin-top: 0;
+            margin-bottom: 8px;
+            font-weight: 700;
+            line-height: 1.4;
+        }
+
+        #sidebar-right p {
+            font-size: 13px;
+            color: #64748b;
+            margin-top: 0;
+            margin-bottom: 30px;
+        }
+
+        .filter-group {
+            margin-bottom: 20px;
+        }
+
+        .filter-group label {
+            display: block;
+            font-size: 11px;
+            font-weight: 600;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+        }
+
+        .filter-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            background-color: #f8fafc;
+            color: #334155;
             font-size: 14px;
-            line-height: 1.6;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .filter-group select:focus {
+            border-color: #3b82f6;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        #loader {
+            font-size: 13px;
+            color: #3b82f6;
+            font-weight: 500;
+            margin-top: 15px;
         }
     </style>
 </head>
 <body>
 
-    <div id="map"></div>
+    <div class="dashboard-wrapper">
+        
+        <div id="map"></div>
+
+        <div id="sidebar-right">
+            <h1>Bản đồ Hành chính Việt Nam</h1>
+            <p>Hệ thống hiển thị ranh giới và bộ lọc dữ liệu địa lý tương tác.</p>
+            
+            <div class="filter-group">
+                <label for="provinceSelect">Tỉnh / Thành phố</label>
+                <select id="provinceSelect">
+                    <option value="">-- Tất cả Tỉnh/Thành --</option>
+                </select>
+            </div>
+
+            <div class="filter-group">
+                <label for="districtSelect">Quận / Huyện</label>
+                <select id="districtSelect" disabled>
+                    <option value="">-- Tất cả Quận/Huyện --</option>
+                </select>
+            </div>
+
+            <div id="loader">Đang khởi tạo dữ liệu bản đồ...</div>
+        </div>
+
+    </div>
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // Khởi tạo bản đồ và đặt góc nhìn ban đầu (Tâm ở Việt Nam)
-        const map = L.map('map').setView([16.047, 105.804], 6);
+        // 1. Khởi tạo bản đồ (Không thêm lớp tileLayer nền)
+        const map = L.map('map', { 
+            attributionControl: false,
+            zoomControl: true 
+        }).setView([16.047, 105.804], 6);
 
-        // Thêm một lớp bản đồ nền từ OpenStreetMap (Bản đồ đường phố miễn phí)
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 18,
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        }).addTo(map);
+        // Đổi nút zoom sang góc trên bên trái cho gọn
+        map.zoomControl.setPosition('topleft');
 
-        // Định hình màu sắc mặc định cho các đường ranh giới huyện/quận
-        const myStyle = {
-            color: "#ff3333",       // Màu của đường viền ranh giới
-            weight: 1.5,            // Độ dày của đường viền
-            opacity: 0.7,           // Độ đậm nhạt đường viền
-            fillColor: "#ff9999",   // Màu nền bên trong quận/huyện
-            fillOpacity: 0.15       // Độ mờ của màu nền
+        const PROP_PROVINCE = 'COUNTRY'; 
+        const PROP_DISTRICT = 'NAME_1';  
+
+        // 2. Màu sắc phối lại cho các khối ranh giới (Vì không có nền nên cần nổi bật vừa phải)
+        const defaultStyle = {
+            color: "#cbd5e1",       // Đường viền mảnh màu xám
+            weight: 0.8,
+            fillColor: "#f1f5f9",   // Màu nền các quận huyện xám trắng nhẹ
+            fillOpacity: 1          // Đổ đặc màu để che phần nền trắng phía dưới
         };
 
-        let geoJsonLayer;
+        let originalGeoData = null; 
+        let currentMapLayer = null; 
 
-        // Hàm xử lý sự kiện tương tác cho từng quận/huyện
-        function onEachFeature(feature, layer) {
-            // Kiểm tra thuộc tính của đối tượng và tạo Popup thông tin
-            if (feature.properties) {
-                let province = feature.properties.COUNTRY || "Chưa rõ";
-                let district = feature.properties.NAME_1 || "Chưa rõ";
-                
-                let popupContent = `
-                    <strong>Tỉnh/Thành:</strong> ${province}<br/>
-                    <strong>Quận/Huyện:</strong> ${district}
-                `;
-                layer.bindPopup(popupContent);
+        const provinceSelect = document.getElementById('provinceSelect');
+        const districtSelect = document.getElementById('districtSelect');
+        const loader = document.getElementById('loader');
+
+        // 3. Tải dữ liệu hình học
+        fetch('gadm41_VNM_2.json')
+            .then(res => res.json())
+            .then(data => {
+                originalGeoData = data;
+                loader.style.display = 'none'; 
+
+                // Vẽ bản đồ lần đầu
+                renderMap(originalGeoData.features);
+                populateProvinces(originalGeoData.features);
+            })
+            .catch(err => {
+                loader.innerText = "Lỗi tải dữ liệu JSON.";
+                console.error(err);
+            });
+
+        function renderMap(features) {
+            if (currentMapLayer) {
+                map.removeLayer(currentMapLayer); 
             }
 
-            // Hiệu ứng đổi màu nổi bật khi người dùng rê chuột (hover) vào vùng đất
-            layer.on({
-                mouseover: function (e) {
-                    let hoveredLayer = e.target;
-                    hoveredLayer.setStyle({
-                        weight: 3,
-                        color: '#0066ff',
-                        fillOpacity: 0.4
+            currentMapLayer = L.geoJSON({ type: "FeatureCollection", features: features }, {
+                style: defaultStyle,
+                onEachFeature: function(feature, layer) {
+                    let prov = feature.properties[PROP_PROVINCE] || "Chưa rõ";
+                    let dist = feature.properties[PROP_DISTRICT] || "Chưa rõ";
+                    
+                    layer.bindPopup(`
+                        <strong style="font-size:14px;">${dist}</strong><br>
+                        <span style="color:#64748b; font-size:12px;">Thuộc: ${prov}</span>
+                    `);
+
+                    // Hiệu ứng rê chuột vào đổi khối hình sang tone màu xanh dịu
+                    layer.on({
+                        mouseover: (e) => {
+                            e.target.setStyle({ 
+                                weight: 1.5, 
+                                color: '#3b82f6', 
+                                fillColor: '#e0f2fe' 
+                            });
+                        },
+                        mouseout: (e) => { 
+                            currentMapLayer.resetStyle(e.target); 
+                        }
                     });
-                    hoveredLayer.bringToFront();
-                },
-                mouseout: function (e) {
-                    geoJsonLayer.resetStyle(e.target); // Trả lại màu cũ khi rê chuột ra ngoài
+                }
+            }).addTo(map);
+
+            // Hàm tự động tính toán để thu nhỏ/phóng to bản đồ nằm vừa trọn góc khung hình bên trái
+            map.fitBounds(currentMapLayer.getBounds(), {
+                padding: [20, 20] // Tạo khoảng trống viền 20px để bản đồ không bị dính sát mép
+            });
+        }
+
+        function populateProvinces(features) {
+            const provinces = [...new Set(features.map(f => f.properties[PROP_PROVINCE]))].sort();
+            provinces.forEach(prov => {
+                if(prov) {
+                    let opt = document.createElement('option');
+                    opt.value = prov;
+                    opt.textContent = prov;
+                    provinceSelect.appendChild(opt);
                 }
             });
         }
 
-        // 5. Đọc dữ liệu từ file JSON hành chính bạn cung cấp
-        fetch('gadm41_VNM_2.json')
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Không thể tải tập tin dữ liệu bản đồ GeoJSON.");
-                }
-                return response.json();
-            })
-            .then(geojsonData => {
-                // Tạo lớp bản đồ từ dữ liệu GeoJSON và áp dụng các hàm xử lý tương tác
-                geoJsonLayer = L.geoJSON(geojsonData, {
-                    style: myStyle,
-                    onEachFeature: onEachFeature
-                }).addTo(map);
+        // Sự kiện lọc Tỉnh
+        provinceSelect.addEventListener('change', function() {
+            const selectedProvince = this.value;
+            districtSelect.innerHTML = '<option value="">-- Tất cả Quận/Huyện --</option>';
+            
+            if (!selectedProvince) {
+                renderMap(originalGeoData.features);
+                districtSelect.disabled = true;
+                return;
+            }
 
-                // Tự động thu phóng bản đồ để hiển thị vừa vặn toàn bộ ranh giới dữ liệu vừa tải
-                map.fitBounds(geoJsonLayer.getBounds());
-            })
-            .catch(error => {
-                console.error('Lỗi khi tải hoặc xử lý bản đồ:', error);
-                alert('Có lỗi xảy ra khi tải dữ liệu bản đồ. Vui lòng kiểm tra lại console của trình duyệt.');
+            const filteredFeatures = originalGeoData.features.filter(f => f.properties[PROP_PROVINCE] === selectedProvince);
+            renderMap(filteredFeatures);
+            
+            const districts = [...new Set(filteredFeatures.map(f => f.properties[PROP_DISTRICT]))].sort();
+            districts.forEach(dist => {
+                if(dist) {
+                    let opt = document.createElement('option');
+                    opt.value = dist;
+                    opt.textContent = dist;
+                    districtSelect.appendChild(opt);
+                }
             });
+            districtSelect.disabled = false;
+        });
+
+        // Sự kiện lọc Huyện
+        districtSelect.addEventListener('change', function() {
+            const selectedProvince = provinceSelect.value;
+            const selectedDistrict = this.value;
+
+            if (!selectedDistrict) {
+                const filteredFeatures = originalGeoData.features.filter(f => f.properties[PROP_PROVINCE] === selectedProvince);
+                renderMap(filteredFeatures);
+                return;
+            }
+
+            const finalFeatures = originalGeoData.features.filter(f => 
+                f.properties[PROP_PROVINCE] === selectedProvince && 
+                f.properties[PROP_DISTRICT] === selectedDistrict
+            );
+            renderMap(finalFeatures);
+        });
     </script>
 </body>
 </html>
