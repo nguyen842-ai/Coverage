@@ -13,28 +13,27 @@
             padding: 0;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f8fafc; /* Nền tổng thể của trang web */
+            background-color: #f8fafc;
         }
 
-        /* Khung chứa chia làm 2 cột bằng Flexbox */
         .dashboard-wrapper {
             display: flex;
             width: 100%;
             height: 100%;
         }
 
-        /* CỘT TRÁI: KHUNG CHỨA BẢN ĐỒ */
+        /* CỘT TRÁI: BẢN ĐỒ */
         #map {
-            width: 65%; /* Bản đồ chiếm 65% chiều rộng bên trái */
+            width: 65%;
             height: 100%;
-            background-color: #ffffff !important; /* Đổi nền mặc định của bản đồ thành màu trắng tinh */
+            background-color: #ffffff !important;
         }
 
         /* CỘT PHẢI: TIÊU ĐỀ VÀ BỘ LỌC */
         #sidebar-right {
-            width: 35%; /* Bộ lọc chiếm 35% chiều rộng bên phải */
+            width: 35%;
             background: #ffffff;
-            border-left: 1px solid #e2e8f0; /* Đường kẻ phân cách mỏng */
+            border-left: 1px solid #e2e8f0;
             padding: 35px;
             box-sizing: border-box;
             display: flex;
@@ -131,42 +130,39 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
-        // 1. Khởi tạo bản đồ (Không thêm lớp tileLayer nền)
         const map = L.map('map', { 
             attributionControl: false,
             zoomControl: true 
         }).setView([16.047, 105.804], 6);
 
-        // Đổi nút zoom sang góc trên bên trái cho gọn
         map.zoomControl.setPosition('topleft');
 
         const PROP_PROVINCE = 'COUNTRY'; 
         const PROP_DISTRICT = 'NAME_1';  
 
-        // 2. Màu sắc phối lại cho các khối ranh giới (Vì không có nền nên cần nổi bật vừa phải)
+        // ĐỔI MÀU ĐƯỜNG VIỀN SANG ĐẬM HƠN (Dùng màu Slate-500 #64748b thay vì #cbd5e1)
         const defaultStyle = {
-            color: "#cbd5e1",       // Đường viền mảnh màu xám
-            weight: 0.8,
-            fillColor: "#f1f5f9",   // Màu nền các quận huyện xám trắng nhẹ
-            fillOpacity: 1          // Đổ đặc màu để che phần nền trắng phía dưới
+            color: "#64748b",       
+            weight: 1.0,            // Tăng độ dày viền lên một chút để rõ ràng hơn
+            fillColor: "#f1f5f9",   
+            fillOpacity: 1          
         };
 
         let originalGeoData = null; 
         let currentMapLayer = null; 
+        let redDotMarker = null;    // Biến lưu trữ điểm chấm đỏ toàn cục
 
         const provinceSelect = document.getElementById('provinceSelect');
         const districtSelect = document.getElementById('districtSelect');
         const loader = document.getElementById('loader');
 
-        // 3. Tải dữ liệu hình học
         fetch('gadm41_VNM_2.json')
             .then(res => res.json())
             .then(data => {
                 originalGeoData = data;
                 loader.style.display = 'none'; 
 
-                // Vẽ bản đồ lần đầu
-                renderMap(originalGeoData.features);
+                renderMap(originalGeoData.features, true); // Lần đầu load thì scale tự động
                 populateProvinces(originalGeoData.features);
             })
             .catch(err => {
@@ -174,7 +170,7 @@
                 console.error(err);
             });
 
-        function renderMap(features) {
+        function renderMap(features, shouldFitBounds = false) {
             if (currentMapLayer) {
                 map.removeLayer(currentMapLayer); 
             }
@@ -190,11 +186,10 @@
                         <span style="color:#64748b; font-size:12px;">Thuộc: ${prov}</span>
                     `);
 
-                    // Hiệu ứng rê chuột vào đổi khối hình sang tone màu xanh dịu
                     layer.on({
                         mouseover: (e) => {
                             e.target.setStyle({ 
-                                weight: 1.5, 
+                                weight: 1.8, 
                                 color: '#3b82f6', 
                                 fillColor: '#e0f2fe' 
                             });
@@ -206,10 +201,9 @@
                 }
             }).addTo(map);
 
-            // Hàm tự động tính toán để thu nhỏ/phóng to bản đồ nằm vừa trọn góc khung hình bên trái
-            map.fitBounds(currentMapLayer.getBounds(), {
-                padding: [20, 20] // Tạo khoảng trống viền 20px để bản đồ không bị dính sát mép
-            });
+            if (shouldFitBounds) {
+                map.fitBounds(currentMapLayer.getBounds(), { padding: [20, 20] });
+            }
         }
 
         function populateProvinces(features) {
@@ -224,20 +218,49 @@
             });
         }
 
-        // Sự kiện lọc Tỉnh
+        // SỰ KIỆN LỌC TỈNH / THÀNH PHỐ
         provinceSelect.addEventListener('change', function() {
             const selectedProvince = this.value;
             districtSelect.innerHTML = '<option value="">-- Tất cả Quận/Huyện --</option>';
             
+            // Xóa chấm đỏ cũ nếu có trước khi thực hiện lọc mới
+            if (redDotMarker) {
+                map.removeLayer(redDotMarker);
+                redDotMarker = null;
+            }
+            
             if (!selectedProvince) {
-                renderMap(originalGeoData.features);
+                renderMap(originalGeoData.features, true);
                 districtSelect.disabled = true;
                 return;
             }
 
             const filteredFeatures = originalGeoData.features.filter(f => f.properties[PROP_PROVINCE] === selectedProvince);
-            renderMap(filteredFeatures);
             
+            // Vẽ các quận/huyện của tỉnh đó lên (nhưng chưa fitBounds vội để tạo hiệu ứng)
+            renderMap(filteredFeatures, false);
+            
+            // 1. Lấy tọa độ trung tâm của tỉnh vừa lọc
+            const bounds = currentMapLayer.getBounds();
+            const centerLatLng = bounds.getCenter();
+
+            // 2. Tạo chấm điểm đỏ viền trắng tương phản cao tại tâm của Tỉnh
+            redDotMarker = L.circleMarker(centerLatLng, {
+                radius: 8,             // Kích thước điểm tròn
+                color: '#ffffff',      // Viền trắng bên ngoài giúp nổi bật trên mọi nền màu
+                weight: 2,             // Độ dày viền trắng
+                fillColor: '#ef4444',  // Màu đỏ rực rỡ (đỏ tươi)
+                fillOpacity: 1
+            }).addTo(map);
+
+            // 3. Tiến hành Scale (Zoom mượt mà) vào khu vực Tỉnh đó sau khi chấm điểm
+            map.fitBounds(bounds, {
+                padding: [50, 50],     // Khoảng cách an toàn với mép màn hình
+                animate: true,         // Bật hiệu ứng chuyển động mượt mà
+                duration: 1.2          // Thời gian thực hiện hiệu ứng zoom (1.2 giây)
+            });
+            
+            // Cập nhật danh sách quận/huyện vào ô chọn
             const districts = [...new Set(filteredFeatures.map(f => f.properties[PROP_DISTRICT]))].sort();
             districts.forEach(dist => {
                 if(dist) {
@@ -250,14 +273,28 @@
             districtSelect.disabled = false;
         });
 
-        // Sự kiện lọc Huyện
+        // SỰ KIỆN LỌC QUẬN / HUYỆN
         districtSelect.addEventListener('change', function() {
             const selectedProvince = provinceSelect.value;
             const selectedDistrict = this.value;
 
+            // Mỗi khi chuyển sang lọc chi tiết huyện, tạm ẩn chấm đỏ của Tỉnh đi cho đỡ rối mắt
+            if (redDotMarker) {
+                map.removeLayer(redDotMarker);
+                redDotMarker = null;
+            }
+
             if (!selectedDistrict) {
                 const filteredFeatures = originalGeoData.features.filter(f => f.properties[PROP_PROVINCE] === selectedProvince);
-                renderMap(filteredFeatures);
+                renderMap(filteredFeatures, false);
+                
+                // Vẽ lại chấm đỏ ở tâm tỉnh nếu người dùng chọn về "Tất cả Quận/Huyện"
+                const bounds = currentMapLayer.getBounds();
+                redDotMarker = L.circleMarker(bounds.getCenter(), {
+                    radius: 8, color: '#ffffff', weight: 2, fillColor: '#ef4444', fillOpacity: 1
+                }).addTo(map);
+                
+                map.fitBounds(bounds, { padding: [50, 50], animate: true, duration: 1 });
                 return;
             }
 
@@ -265,7 +302,8 @@
                 f.properties[PROP_PROVINCE] === selectedProvince && 
                 f.properties[PROP_DISTRICT] === selectedDistrict
             );
-            renderMap(finalFeatures);
+            
+            renderMap(finalFeatures, true); // Phóng thẳng vào ranh giới Quận/Huyện cụ thể
         });
     </script>
 </body>
