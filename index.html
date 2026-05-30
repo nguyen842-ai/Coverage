@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Bản đồ Nhiệt & Biểu đồ Hỗn hợp</title>
+    <title>Dashboard Độ bao phủ và hiệu suất theo khu vực</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -27,6 +27,7 @@
         #map {
             width: 50%;
             height: 100%;
+            position: relative;
             background-color: #ffffff !important;
         }
 
@@ -47,27 +48,21 @@
             font-size: 22px;
             color: #1e3a8a;
             margin-top: 0;
-            margin-bottom: 6px;
+            margin-bottom: 24px;
             font-weight: 700;
             letter-spacing: -0.5px;
         }
 
-        .subtitle {
-            font-size: 13px;
-            color: #64748b;
-            margin-top: 0;
-            margin-bottom: 24px;
-            line-height: 1.5;
-        }
-
         .filter-row {
             display: flex;
-            gap: 16px;
+            gap: 12px;
             margin-bottom: 16px;
+            flex-wrap: nowrap;
         }
 
         .filter-group {
             flex: 1;
+            min-width: 0; /* Ngăn drop-down bị vỡ khung chữ */
         }
 
         .filter-group label {
@@ -78,16 +73,19 @@
             text-transform: uppercase;
             margin-bottom: 6px;
             letter-spacing: 0.5px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         .filter-group select {
             width: 100%;
-            padding: 10px 12px;
+            padding: 10px 8px;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             background-color: #f8fafc;
             color: #0f172a;
-            font-size: 13px;
+            font-size: 12px;
             outline: none;
             cursor: pointer;
             transition: all 0.2s ease;
@@ -104,8 +102,42 @@
             padding: 16px;
             border-radius: 12px;
             border: 1px solid #bbf7d0;
-            margin-top: 8px;
+            margin-top: 4px;
             margin-bottom: 24px;
+        }
+
+        /* BỘ LỌC KIỂU DỮ LIỆU ĐƯỢC DỜI SANG CẠNH NÚT ZOOM MAP */
+        .custom-map-filter-control {
+            background: white;
+            padding: 5px 10px;
+            border-radius: 6px;
+            border: 2px solid rgba(0,0,0,0.2);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            position: absolute;
+            left: 44px;
+            top: 0px;
+            margin: 0 !important;
+            white-space: nowrap;
+            z-index: 1000;
+        }
+        .custom-map-filter-control label {
+            font-size: 11px;
+            font-weight: 700;
+            color: #475569;
+            text-transform: uppercase;
+        }
+        .custom-map-filter-control select {
+            padding: 4px 6px;
+            font-size: 12px;
+            border: 1px solid #cbd5e1;
+            border-radius: 4px;
+            outline: none;
+            cursor: pointer;
+            background: #f8fafc;
+            font-weight: 600;
+            color: #1e3a8a;
         }
 
         /* THƯỚC ĐO MÀU NHIỆT DỌC TRÊN BẢN ĐỒ */
@@ -295,8 +327,7 @@
         <div id="map"></div>
 
         <div id="sidebar-right">
-            <h1>Hệ thống Giám sát Hiệu suất</h1>
-            <p class="subtitle">Bản đồ nhiệt phân tích dữ liệu kinh doanh đa chiều doanh nghiệp.</p>
+            <h1>Độ bao phủ và hiệu suất theo khu vực</h1>
             
             <div class="filter-row">
                 <div class="filter-group">
@@ -307,12 +338,9 @@
                     <label for="areaSelect">Area (Khu vực)</label>
                     <select id="areaSelect"><option value="">-- Tất cả Area --</option></select>
                 </div>
-            </div>
-
-            <div class="filter-row">
                 <div class="filter-group">
                     <label for="provinceSelect">Tỉnh / Thành phố</label>
-                    <select id="provinceSelect"><option value="">-- Tất cả Tỉnh/Thành thuộc DB --</option></select>
+                    <select id="provinceSelect"><option value="">-- Tất cả Tỉnh/Thành --</option></select>
                 </div>
                 <div class="filter-group">
                     <label for="catSelect">CAT (Danh mục)</label>
@@ -321,24 +349,22 @@
             </div>
 
             <div class="heat-config-panel">
-                <div class="filter-row" style="margin-bottom: 0;">
-                    <div class="filter-group" style="margin-bottom: 0;">
-                        <label style="color:#166534;" for="dataTypeSelect">Xem Bản đồ Nhiệt theo</label>
-                        <select id="dataTypeSelect" style="background:#fff;">
-                            <option value="Pfm">Hiệu suất (Performance)</option>
-                            <option value="actC">Số lượng (Act Count)</option>
-                        </select>
-                    </div>
-                    <div class="filter-group" style="margin-bottom: 0;">
-                        <label style="color:#166534;" for="monthSelect">Thời gian (Tháng)</label>
-                        <select id="monthSelect" style="background:#fff;">
-                            <option value="Jan">Tháng 1</option>
-                            <option value="Feb">Tháng 2</option>
-                            <option value="Mar">Tháng 3</option>
-                            <option value="Apr">Tháng 4</option>
-                            <option value="May">Tháng 5</option>
-                        </select>
-                    </div>
+                <div class="filter-group" style="margin-bottom: 0;">
+                    <label style="color:#166534;" for="monthSelect">Thời gian (Tháng)</label>
+                    <select id="monthSelect" style="background:#fff;">
+                        <option value="Jan">Tháng 1</option>
+                        <option value="Feb">Tháng 2</option>
+                        <option value="Mar">Tháng 3</option>
+                        <option value="Apr">Tháng 4</option>
+                        <option value="May">Tháng 5</option>
+                        <option value="Jun">Tháng 6</option>
+                        <option value="Jul">Tháng 7</option>
+                        <option value="Aug">Tháng 8</option>
+                        <option value="Sep">Tháng 9</option>
+                        <option value="Oct">Tháng 10</option>
+                        <option value="Nov">Tháng 11</option>
+                        <option value="Dec">Tháng 12</option>
+                    </select>
                 </div>
             </div>
 
@@ -352,10 +378,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================
-        // [VÙNG TRỐNG] DÁN LẠI DANH SÁCH DATABASE CỦA BẠN VÀO ĐÂY
+        // [VÙNG TRỐNG THAY THẾ] DÁN TOÀN BỘ DATABASE CỦA BẠN VÀO ĐÂY
         // =========================================================
         const myDatabase = [
-         { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
+            { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Đốc", cat: "All Cat", actCJan: "74", actCFeb: "43", actCMar: "46", actCApr: "49", actCMay: "55", PfmJan: "716170294.444444", PfmFeb: "692128820.37037", PfmMar: "831899387.962963", PfmApr: "478151834.259259", PfmMay: "285762283.333333"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Phú", cat: "All Cat", actCJan: "38", actCFeb: "18", actCMar: "30", actCApr: "35", actCMay: "28", PfmJan: "240551274.410774", PfmFeb: "114737000", PfmMar: "190912312.962963", PfmApr: "178818300.925926", PfmMay: "65588013.8888889"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Thành", cat: "All Cat", actCJan: "71", actCFeb: "40", actCMar: "73", actCApr: "54", actCMay: "46", PfmJan: "286912144.158249", PfmFeb: "156127625", PfmMar: "249903750.925926", PfmApr: "177757845.37037", PfmMay: "436262337.037037"},
@@ -1092,25 +1118,45 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Phú Nhuận", cat: "F&B", actCJan: "51", actCFeb: "25", actCMar: "50", actCApr: "96", actCMay: "", PfmJan: "573575954.545455", PfmFeb: "151656000", PfmMar: "522288500", PfmApr: "747163100", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
-{ hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},   
+{ hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
+
         ];
 
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
 
-        // Trạng thái bật/tắt nhãn mặc định ban đầu là bật (true)
-        let showLabels = true; 
+        // Khai báo quản lý 12 tháng hệ thống chuỗi đồng bộ
+        const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+        const monthLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
-        // Tạo Thước đo nhiệt dọc tích hợp thẳng vào góc trái Bản Đồ dưới Zoom Control kèm Công tắc gạt
+        let showLabels = true; 
+        let originalGeoData = null; 
+        let currentMapLayer = null; 
+        let myChart = null; 
+
+        // Gắn Bộ lọc Xem bản đồ nhiệt lên góc Map (Cạnh Zoom Control)
+        const filterControl = L.control({ position: 'topleft' });
+        filterControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'custom-map-filter-control');
+            L.DomEvent.disableClickPropagation(div);
+            div.innerHTML = `
+                <label for="dataTypeSelect">Xem theo:</label>
+                <select id="dataTypeSelect">
+                    <option value="Pfm">Sell out</option>
+                    <option value="actC">Số lượng khách hàng lên đơn</option>
+                </select>
+            `;
+            return div;
+        };
+        filterControl.addTo(map);
+
+        // Khởi tạo Thước đo nhiệt màu dọc kèm Switch On/Off Nhãn Địa danh
         const legendControl = L.control({ position: 'topleft' });
         legendControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'map-legend-vertical');
-            
-            // Ngăn sự kiện Click/Dray trên panel này truyền xuống bản đồ phía dưới
             L.DomEvent.disableClickPropagation(div);
-
             div.innerHTML = `
-                <div class="legend-title-vertical">Hiệu Suất</div>
+                <div class="legend-title-vertical" id="legendTitleMap">Sell out</div>
                 <div class="legend-body-vertical">
                     <div class="legend-labels-vertical">
                         <span id="legendMaxMap">Cao</span>
@@ -1128,11 +1174,10 @@
                 </div>
             `;
 
-            // Lắng nghe hành vi thay đổi trạng thái của nút gạt
             const checkbox = div.querySelector('#labelToggleInput');
             L.DomEvent.on(checkbox, 'change', function(e) {
                 showLabels = e.target.checked;
-                refreshDashboard(false); // Vẽ lại ranh giới bản đồ kèm/hoặc không kèm nhãn
+                refreshDashboard(false); 
             });
 
             return div;
@@ -1142,11 +1187,7 @@
         const PROP_PROVINCE = 'COUNTRY'; 
         const PROP_DISTRICT = 'NAME_1';  
 
-        let originalGeoData = null; 
-        let currentMapLayer = null; 
-        let myChart = null; 
-
-        // DOM Elements
+        // Khai báo lại DOM các Element sau khi map được dựng hoàn chỉnh
         const hqSelect = document.getElementById('hqSelect');
         const areaSelect = document.getElementById('areaSelect');
         const provinceSelect = document.getElementById('provinceSelect');
@@ -1155,6 +1196,9 @@
         const monthSelect = document.getElementById('monthSelect');
         const reportContainer = document.getElementById('reportContainer');
         const loader = document.getElementById('loader');
+
+        // Bắt sự kiện thay đổi cho ô chọn vừa dời sang bản đồ
+        dataTypeSelect.addEventListener('change', () => refreshDashboard(false));
 
         function safeNormalizeString(val) {
             if (val === null || val === undefined) return "";
@@ -1189,7 +1233,6 @@
             return '#1e3a8a';                             
         }
 
-        // Khởi động nạp dữ liệu ranh giới địa lý hành chính
         fetch('gadm41_VNM_2.json')
             .then(res => {
                 if(!res.ok) throw new Error("Không tìm thấy tệp JSON ranh giới.");
@@ -1206,7 +1249,6 @@
                 console.error("Lỗi mạng:", err); 
             });
 
-        // HỆ THỐNG BỘ LỌC LIÊN HOÀN DROPDOWN
         function populateHQOptions() {
             const hqs = [...new Set(myDatabase.map(item => item.hq).filter(Boolean))].sort();
             hqSelect.innerHTML = '<option value="">-- Tất cả HQ --</option>';
@@ -1234,7 +1276,7 @@
                 (!selectedHQ || item.hq === selectedHQ) && (!selectedArea || item.area === selectedArea)
             );
             const provinces = [...new Set(filteredRecords.map(item => item.prov).filter(Boolean))].sort();
-            provinceSelect.innerHTML = '<option value="">-- Tất cả Tỉnh/Thành thuộc DB --</option>';
+            provinceSelect.innerHTML = '<option value="">-- Tất cả Tỉnh/Thành --</option>';
             provinces.forEach(prov => {
                 let opt = document.createElement('option'); opt.value = prov; opt.textContent = prov; provinceSelect.appendChild(opt);
             });
@@ -1295,7 +1337,8 @@
                 maxVal = valuesArray.length ? Math.max(...valuesArray) : 100;
             }
 
-            // Cập nhật khoảng số liệu động vào thước đo bản đồ
+            // Đồng bộ tên nhãn tiêu đề động trên thước đo nhiệt
+            document.getElementById('legendTitleMap').innerText = sDataType === 'Pfm' ? 'Sell out' : 'Số lượng KH';
             document.getElementById('legendMinMap').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType) : "Thấp";
             document.getElementById('legendMaxMap').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
 
@@ -1328,7 +1371,6 @@
                     let prov = feature.properties[PROP_PROVINCE];
                     let dist = feature.properties[PROP_DISTRICT];
                     
-                    // KIỂM TRA ĐIỀU KIỆN ĐỂ GẮN NHÃN QUẬN/HUYỆN TRỰC TIẾP LÊN VÙNG BẢN ĐỒ
                     if (showLabels) {
                         layer.bindTooltip(dist, {
                             permanent: true,
@@ -1352,6 +1394,7 @@
 
         function showReport(provinceName, districtName) {
             const sCat = catSelect.value;
+            const sMonth = monthSelect.value;
             let nProv = safeNormalizeString(provinceName);
             let nDist = safeNormalizeString(districtName);
 
@@ -1378,10 +1421,25 @@
                 }
             }
 
+            // Tự động giải nén cấu trúc mảng dữ liệu cho 12 tháng đầy đủ
             const monthsData = {
-                actC: [extractMonthVal('actCJan'), extractMonthVal('actCFeb'), extractMonthVal('actCMar'), extractMonthVal('actCApr'), extractMonthVal('actCMay')],
-                pfm: [extractMonthVal('PfmJan'), extractMonthVal('PfmFeb'), extractMonthVal('PfmMar'), extractMonthVal('PfmApr'), extractMonthVal('PfmMay')]
+                actC: monthKeys.map(m => extractMonthVal('actC' + m)),
+                pfm: monthKeys.map(m => extractMonthVal('Pfm' + m))
             };
+
+            // Tạo các dòng dữ liệu bảng 12 tháng, làm nổi bật hàng tương ứng tháng đang chọn lọc
+            let tableRowsHtml = '';
+            for (let i = 0; i < 12; i++) {
+                let highlightStyle = (monthKeys[i] === sMonth) ? 'font-weight:600; background-color:#f0fdf4;' : '';
+                let textHighlight = (monthKeys[i] === sMonth) ? 'color:#2563eb; font-weight:700;' : '';
+                tableRowsHtml += `
+                    <tr style="${highlightStyle}">
+                        <td>${monthLabels[i]}</td>
+                        <td>${formatNumberDisplay(monthsData.actC[i], 'actC')}</td>
+                        <td style="text-align:right; ${textHighlight}">${formatNumberDisplay(monthsData.pfm[i], 'Pfm')}</td>
+                    </tr>
+                `;
+            }
 
             reportContainer.innerHTML = `
                 <div class="report-header">
@@ -1398,14 +1456,10 @@
 
                 <table class="data-table">
                     <thead>
-                        <tr><th>Thời gian</th><th>Số lượng (ActC)</th><th style="text-align:right;">Hiệu suất (Pfm)</th></tr>
+                        <tr><th>Thời gian</th><th>Số lượng khách hàng lên đơn</th><th style="text-align:right;">Sell out</th></tr>
                     </thead>
                     <tbody>
-                        <tr><td>Tháng 1</td><td>${formatNumberDisplay(monthsData.actC[0], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[0], 'Pfm')}</td></tr>
-                        <tr><td>Tháng 2</td><td>${formatNumberDisplay(monthsData.actC[1], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[1], 'Pfm')}</td></tr>
-                        <tr><td>Tháng 3</td><td>${formatNumberDisplay(monthsData.actC[2], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[2], 'Pfm')}</td></tr>
-                        <tr><td>Tháng 4</td><td>${formatNumberDisplay(monthsData.actC[3], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[3], 'Pfm')}</td></tr>
-                        <tr><td>Tháng 5</td><td>${formatNumberDisplay(monthsData.actC[4], 'actC')}</td><td style="text-align:right; font-weight:600; color:#2563eb;">${formatNumberDisplay(monthsData.pfm[4], 'Pfm')}</td></tr>
+                        ${tableRowsHtml}
                     </tbody>
                 </table>
             `;
@@ -1415,11 +1469,11 @@
 
             myChart = new Chart(ctx, {
                 data: {
-                    labels: ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'],
+                    labels: monthLabels,
                     datasets: [
                         {
                             type: 'line',
-                            label: 'Doanh số (VND)',
+                            label: 'Sell out (VND)',
                             data: monthsData.pfm,
                             borderColor: '#10b981',        
                             backgroundColor: 'transparent',
@@ -1430,12 +1484,12 @@
                         },
                         {
                             type: 'bar',
-                            label: 'Số lượng KH (ActC)',
+                            label: 'Số lượng khách hàng lên đơn',
                             data: monthsData.actC,
                             backgroundColor: '#3b82f6',    
                             yAxisID: 'yAxisCount',         
                             order: 2,
-                            maxBarThickness: 24,
+                            maxBarThickness: 16,
                             borderRadius: 4
                         }
                     ]
@@ -1449,11 +1503,11 @@
                     scales: {
                         yAxisCount: {
                             type: 'linear', position: 'left',
-                            title: { display: true, text: 'Số lượng khách hàng (ActC)', color: '#475569', font: { size: 11, weight: 'bold' } }
+                            title: { display: true, text: 'Số lượng khách hàng lên đơn', color: '#475569', font: { size: 11, weight: 'bold' } }
                         },
                         yAxisVND: {
                             type: 'linear', position: 'right',
-                            title: { display: true, text: 'Doanh số (VND)', color: '#10b981', font: { size: 11, weight: 'bold' } },
+                            title: { display: true, text: 'Sell out (VND)', color: '#10b981', font: { size: 11, weight: 'bold' } },
                             ticks: { callback: function(value) { return new Intl.NumberFormat('en-US').format(value); } },
                             grid: { drawOnChartArea: false } 
                         }
@@ -1530,8 +1584,17 @@
         areaSelect.addEventListener('change', function() { updateProvinceOptions(); refreshDashboard(true); });
         provinceSelect.addEventListener('change', function() { handleProvinceChange(true); });
         catSelect.addEventListener('change', function() { refreshDashboard(false); });
-        dataTypeSelect.addEventListener('change', () => refreshDashboard(false));
-        monthSelect.addEventListener('change', () => refreshDashboard(false));
+        monthSelect.addEventListener('change', () => {
+            refreshDashboard(false);
+            // Nếu đang xem chi tiết một huyện, cập nhật lại bảng báo cáo để highlight hàng tháng mới chọn
+            const headerActive = reportContainer.querySelector('.report-header h3');
+            if (headerActive) {
+                const match = headerActive.innerText.match(/Địa bàn:\s*(.*?)\s*\((.*?)\)/);
+                if (match && match[1] && match[2]) {
+                    showReport(match[2], match[1]);
+                }
+            }
+        });
     </script>
 </body>
 </html>
