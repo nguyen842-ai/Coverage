@@ -120,7 +120,7 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            min-width: 90px;
+            min-width: 95px;
         }
         .legend-title-vertical {
             font-size: 11px;
@@ -136,7 +136,7 @@
         .legend-body-vertical {
             display: flex;
             gap: 10px;
-            height: 160px;
+            height: 150px;
             width: 100%;
             justify-content: center;
         }
@@ -156,6 +156,62 @@
             text-align: right;
             max-width: 90px;
             white-space: nowrap;
+        }
+
+        /* NÚT CÔNG TẮC GẠT (TOGGLE SWITCH) BẬT/TẮT NHÃN */
+        .toggle-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            margin-top: 6px;
+            padding-top: 8px;
+            border-top: 1px solid #f1f5f9;
+            gap: 8px;
+        }
+        .toggle-label {
+            font-size: 11px;
+            font-weight: 600;
+            color: #475569;
+            user-select: none;
+            cursor: pointer;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 32px;
+            height: 18px;
+            flex-shrink: 0;
+        }
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #cbd5e1;
+            transition: .2s;
+            border-radius: 18px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 14px;
+            width: 14px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .2s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #2563eb;
+        }
+        input:checked + .slider:before {
+            transform: translateX(14px);
         }
 
         /* NHÃN QUẬN HUYỆN TRÊN MAP */
@@ -296,10 +352,10 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================
-        // DÁN TOÀN BỘ DANH SÁCH DATABASE THỰC TẾ CỦA BẠN VÀO ĐÂY
+        // [VÙNG TRỐNG] DÁN LẠI DANH SÁCH DATABASE CỦA BẠN VÀO ĐÂY
         // =========================================================
         const myDatabase = [
-            { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
+         { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Đốc", cat: "All Cat", actCJan: "74", actCFeb: "43", actCMar: "46", actCApr: "49", actCMay: "55", PfmJan: "716170294.444444", PfmFeb: "692128820.37037", PfmMar: "831899387.962963", PfmApr: "478151834.259259", PfmMay: "285762283.333333"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Phú", cat: "All Cat", actCJan: "38", actCFeb: "18", actCMar: "30", actCApr: "35", actCMay: "28", PfmJan: "240551274.410774", PfmFeb: "114737000", PfmMar: "190912312.962963", PfmApr: "178818300.925926", PfmMay: "65588013.8888889"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Thành", cat: "All Cat", actCJan: "71", actCFeb: "40", actCMar: "73", actCApr: "54", actCMay: "46", PfmJan: "286912144.158249", PfmFeb: "156127625", PfmMar: "249903750.925926", PfmApr: "177757845.37037", PfmMay: "436262337.037037"},
@@ -1036,16 +1092,23 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Phú Nhuận", cat: "F&B", actCJan: "51", actCFeb: "25", actCMar: "50", actCApr: "96", actCMay: "", PfmJan: "573575954.545455", PfmFeb: "151656000", PfmMar: "522288500", PfmApr: "747163100", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
-{ hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
- ];
+{ hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},   
+        ];
 
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
 
-        // Tạo Thước đo nhiệt dọc tích hợp thẳng vào góc trái Bản Đồ dưới Zoom Control
+        // Trạng thái bật/tắt nhãn mặc định ban đầu là bật (true)
+        let showLabels = true; 
+
+        // Tạo Thước đo nhiệt dọc tích hợp thẳng vào góc trái Bản Đồ dưới Zoom Control kèm Công tắc gạt
         const legendControl = L.control({ position: 'topleft' });
         legendControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'map-legend-vertical');
+            
+            // Ngăn sự kiện Click/Dray trên panel này truyền xuống bản đồ phía dưới
+            L.DomEvent.disableClickPropagation(div);
+
             div.innerHTML = `
                 <div class="legend-title-vertical">Hiệu Suất</div>
                 <div class="legend-body-vertical">
@@ -1056,7 +1119,22 @@
                     </div>
                     <div class="legend-bar-vertical"></div>
                 </div>
+                <div class="toggle-wrapper">
+                    <label class="toggle-label" for="labelToggleInput">Hiện nhãn</label>
+                    <label class="switch">
+                        <input type="checkbox" id="labelToggleInput" ${showLabels ? 'checked' : ''}>
+                        <span class="slider"></span>
+                    </label>
+                </div>
             `;
+
+            // Lắng nghe hành vi thay đổi trạng thái của nút gạt
+            const checkbox = div.querySelector('#labelToggleInput');
+            L.DomEvent.on(checkbox, 'change', function(e) {
+                showLabels = e.target.checked;
+                refreshDashboard(false); // Vẽ lại ranh giới bản đồ kèm/hoặc không kèm nhãn
+            });
+
             return div;
         };
         legendControl.addTo(map);
@@ -1217,7 +1295,7 @@
                 maxVal = valuesArray.length ? Math.max(...valuesArray) : 100;
             }
 
-            // Cập nhật giá trị vào bản đồ nhiệt dọc trên map
+            // Cập nhật khoảng số liệu động vào thước đo bản đồ
             document.getElementById('legendMinMap').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType) : "Thấp";
             document.getElementById('legendMaxMap').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
 
@@ -1250,12 +1328,14 @@
                     let prov = feature.properties[PROP_PROVINCE];
                     let dist = feature.properties[PROP_DISTRICT];
                     
-                    // GẮN NHÃN QUẬN/HUYỆN TRỰC TIẾP LÊN VÙNG BẢN ĐỒ
-                    layer.bindTooltip(dist, {
-                        permanent: true,
-                        direction: 'center',
-                        className: 'map-district-label'
-                    });
+                    // KIỂM TRA ĐIỀU KIỆN ĐỂ GẮN NHÃN QUẬN/HUYỆN TRỰC TIẾP LÊN VÙNG BẢN ĐỒ
+                    if (showLabels) {
+                        layer.bindTooltip(dist, {
+                            permanent: true,
+                            direction: 'center',
+                            className: 'map-district-label'
+                        });
+                    }
 
                     layer.on({
                         mouseover: (e) => { e.target.setStyle({ weight: 2.5, color: '#2563eb', fillOpacity: 0.95 }); },
