@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard Bản đồ Nhiệt - Cấu hình Doanh số Tối ưu</title>
+    <title>Dashboard Bản đồ Nhiệt & Biểu đồ Hỗn hợp</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -23,7 +23,7 @@
             height: 100%;
         }
 
-        /* KHU VỰC CHIA ĐÔI 50% - 50% */
+        /* Chia đôi khu vực màn hình 50% - 50% */
         #map {
             width: 50%;
             height: 100%;
@@ -42,7 +42,6 @@
             z-index: 999;
         }
 
-        /* Giao diện Corporate Blue */
         h1 {
             font-size: 20px;
             color: #1e3a8a;
@@ -104,7 +103,7 @@
             margin-top: 5px;
         }
 
-        /* THƯỚC ĐO DẢI MÀU NHIỆT XANH DƯƠNG */
+        /* CHÚ THÍCH DẢI MÀU NHIỆT */
         .legend-container {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -125,7 +124,6 @@
             height: 12px;
             border-radius: 4px;
             overflow: hidden;
-            /* Dải màu bắt đầu từ xanh dương đậm rõ nét */
             background: linear-gradient(to right, #93c5fd, #60a5fa, #2563eb, #1d4ed8, #1e3a8a);
         }
         .legend-labels {
@@ -136,7 +134,6 @@
             margin-top: 4px;
         }
 
-        /* THÀNH PHẦN BÁO CÁO VÀ BẢNG SỐ LIỆU */
         .report-container {
             border-top: 2px solid #e2e8f0;
             padding-top: 15px;
@@ -199,7 +196,6 @@
 <body>
 
     <div class="dashboard-wrapper">
-        
         <div id="map"></div>
 
         <div id="sidebar-right">
@@ -266,18 +262,18 @@
             </div>
 
             <div id="loader">Đang khởi tạo dữ liệu bản đồ...</div>
-
             <div class="report-container" id="reportContainer">
                 <div class="no-data">Bấm vào một vùng bất kỳ trên bản đồ nhiệt hoặc chọn bộ lọc để xem số liệu chi tiết.</div>
             </div>
         </div>
-
     </div>
 
     <script>
-        // DATABASE DOANH NGHIỆP CỦA BẠN (Dữ liệu mẫu thử nghiệm)
+        // =========================================================
+        // DÁN DATABASE THỰC TẾ CỦA BẠN VÀO TRONG NGOẶC VUÔNG NÀY
+        // =========================================================
         const myDatabase = [
-{ hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
+           { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Đốc", cat: "All Cat", actCJan: "74", actCFeb: "43", actCMar: "46", actCApr: "49", actCMay: "55", PfmJan: "716170294.444444", PfmFeb: "692128820.37037", PfmMar: "831899387.962963", PfmApr: "478151834.259259", PfmMay: "285762283.333333"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Phú", cat: "All Cat", actCJan: "38", actCFeb: "18", actCMar: "30", actCApr: "35", actCMay: "28", PfmJan: "240551274.410774", PfmFeb: "114737000", PfmMar: "190912312.962963", PfmApr: "178818300.925926", PfmMay: "65588013.8888889"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Thành", cat: "All Cat", actCJan: "71", actCFeb: "40", actCMar: "73", actCApr: "54", actCMay: "46", PfmJan: "286912144.158249", PfmFeb: "156127625", PfmMar: "249903750.925926", PfmApr: "177757845.37037", PfmMay: "436262337.037037"},
@@ -1015,7 +1011,8 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
-];
+    ];
+
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
 
@@ -1026,7 +1023,6 @@
         let currentMapLayer = null; 
         let myChart = null; 
 
-        // DOM Elements
         const hqSelect = document.getElementById('hqSelect');
         const areaSelect = document.getElementById('areaSelect');
         const provinceSelect = document.getElementById('provinceSelect');
@@ -1037,14 +1033,18 @@
         const reportContainer = document.getElementById('reportContainer');
         const loader = document.getElementById('loader');
 
-        // Hàm lọc sạch ký tự để đưa chuỗi số về dạng float tính toán
+        // BẢO VỆ 1: Hàm ép kiểu và chuẩn hóa chuỗi an toàn tuyệt đối với Null/Undefined
+        function safeNormalizeString(val) {
+            if (val === null || val === undefined) return "";
+            return String(val).toLowerCase().trim();
+        }
+
         function parseNumericValue(val) {
             if (typeof val === 'number') return val;
             if (!val) return 0;
             return parseFloat(val.toString().replace(/,/g, '')) || 0;
         }
 
-        // Định dạng hiển thị chuỗi số phân cách bằng dấu phẩy kiểu Mỹ (1,100,000,000)
         function formatNumberDisplay(val, type) {
             let num = parseFloat(val) || 0;
             if (type === 'Pfm') {
@@ -1053,9 +1053,8 @@
             return new Intl.NumberFormat('en-US').format(num);
         }
 
-        // CỐ ĐỊNH DẢI MÀU NHIỆT XANH DƯƠNG ĐẬM VÀ KHÔNG DOANH SỐ = TRẮNG
         function getHeatColor(value, min, max) {
-            if (value <= 0) return '#ffffff'; // Không doanh số trả về màu trắng
+            if (value <= 0) return '#ffffff'; // Không có doanh số = Trắng tinh
             if (value < min) return '#93c5fd'; 
             
             const range = max - min;
@@ -1068,20 +1067,26 @@
             return '#1e3a8a';                             
         }
 
-        // Tải file ranh giới hành chính Việt Nam
+        // Tải ranh giới địa lý hành chính
         fetch('gadm41_VNM_2.json')
-            .then(res => res.json())
+            .then(res => {
+                if(!res.ok) throw new Error("Không tìm thấy file GeoJSON");
+                return res.json();
+            })
             .then(data => {
                 originalGeoData = data;
                 loader.style.display = 'none'; 
                 populateHQOptions();
                 refreshDashboard(true); 
             })
-            .catch(err => { loader.innerText = "Lỗi tải dữ liệu."; console.error(err); });
+            .catch(err => { 
+                loader.innerText = "Lỗi hệ thống: Không thể tải bản đồ."; 
+                console.error("Lỗi Fetch:", err); 
+            });
 
-        // BỘ LỌC PHÂN CẤP LIÊN HOÀN DROPDOWN
+        // BỘ LỌC CASCADING AN TOÀN
         function populateHQOptions() {
-            const hqs = [...new Set(myDatabase.map(item => item.hq))].sort();
+            const hqs = [...new Set(myDatabase.map(item => item.hq).filter(Boolean))].sort();
             hqSelect.innerHTML = '<option value="">-- Tất cả HQ --</option>';
             hqs.forEach(hq => {
                 let opt = document.createElement('option'); opt.value = hq; opt.textContent = hq; hqSelect.appendChild(opt);
@@ -1092,7 +1097,7 @@
         function updateAreaOptions() {
             const selectedHQ = hqSelect.value;
             const filteredRecords = myDatabase.filter(item => !selectedHQ || item.hq === selectedHQ);
-            const areas = [...new Set(filteredRecords.map(item => item.area))].sort();
+            const areas = [...new Set(filteredRecords.map(item => item.area).filter(Boolean))].sort();
             areaSelect.innerHTML = '<option value="">-- Tất cả Area --</option>';
             areas.forEach(area => {
                 let opt = document.createElement('option'); opt.value = area; opt.textContent = area; areaSelect.appendChild(opt);
@@ -1106,7 +1111,7 @@
             const filteredRecords = myDatabase.filter(item => 
                 (!selectedHQ || item.hq === selectedHQ) && (!selectedArea || item.area === selectedArea)
             );
-            const provinces = [...new Set(filteredRecords.map(item => item.prov))].sort();
+            const provinces = [...new Set(filteredRecords.map(item => item.prov).filter(Boolean))].sort();
             provinceSelect.innerHTML = '<option value="">-- Tất cả Tỉnh/Thành thuộc DB --</option>';
             provinces.forEach(prov => {
                 let opt = document.createElement('option'); opt.value = prov; opt.textContent = prov; provinceSelect.appendChild(opt);
@@ -1121,32 +1126,35 @@
             const filteredRecords = myDatabase.filter(item => 
                 (!selectedHQ || item.hq === selectedHQ) && (!selectedArea || item.area === selectedArea) && (!selectedProv || item.prov === selectedProv)
             );
-            const cats = [...new Set(filteredRecords.map(item => item.cat))].sort();
+            const cats = [...new Set(filteredRecords.map(item => item.cat).filter(Boolean))].sort();
             catSelect.innerHTML = '<option value="">-- Tất cả CAT --</option>';
             cats.forEach(cat => {
-                if(cat) {
-                    let opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; catSelect.appendChild(opt);
-                }
+                let opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; catSelect.appendChild(opt);
             });
         }
 
+        // BẢO VỆ 2: Hàm tính toán giá trị quận huyện bọc giáp safeNormalizeString
         function getDistrictValue(prov, dist, dataKey, sCat) {
+            let nProv = safeNormalizeString(prov);
+            let nDist = safeNormalizeString(dist);
+
             let distRecords = myDatabase.filter(item => 
-                item.prov.toLowerCase().trim() === prov.toLowerCase().trim() && item.dist.toLowerCase().trim() === dist.toLowerCase().trim()
+                safeNormalizeString(item.prov) === nProv && safeNormalizeString(item.dist) === nDist
             );
             if (distRecords.length === 0) return 0;
             if (sCat) {
                 let rec = distRecords.find(item => item.cat === sCat);
                 return rec ? parseNumericValue(rec[dataKey]) : 0;
             } else {
-                let allRec = distRecords.find(item => item.cat.toLowerCase().includes('all'));
+                let allRec = distRecords.find(item => safeNormalizeString(item.cat).includes('all'));
                 if (allRec) return parseNumericValue(allRec[dataKey]);
                 return distRecords.reduce((sum, item) => sum + parseNumericValue(item[dataKey]), 0);
             }
         }
 
-        // VẼ BẢN ĐỒ NHIỆT VỚI HỆ RANGE CỐ ĐỊNH CHO DOANH SỐ
         function refreshDashboard(shouldFitBounds = false) {
+            if (!originalGeoData) return;
+
             const sHQ = hqSelect.value;
             const sArea = areaSelect.value;
             const sProv = provinceSelect.value;
@@ -1157,8 +1165,8 @@
 
             let minVal, maxVal;
             if (sDataType === 'Pfm') {
-                minVal = 900000;          // Cố định từ 900,000 VND
-                maxVal = 2700000000;      // Đến 2,700,000,000 VND
+                minVal = 900000;          
+                maxVal = 2700000000;      
             } else {
                 const activeRecords = myDatabase.filter(item => (!sHQ || item.hq === sHQ) && (!sArea || item.area === sArea) && (!sProv || item.prov === sProv) && (!sCat || item.cat === sCat));
                 let valuesArray = activeRecords.map(item => parseNumericValue(item[dataKey])).filter(v => v > 0);
@@ -1171,11 +1179,11 @@
             document.getElementById('legendMax').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
 
             const activeRecordsForGeom = myDatabase.filter(item => (!sHQ || item.hq === sHQ) && (!sArea || item.area === sArea) && (!sProv || item.prov === sProv) && (!sCat || item.cat === sCat));
-            const validProvincesInActiveRecords = [...new Set(activeRecordsForGeom.map(item => item.prov.toLowerCase().trim()))];
+            const validProvincesInActiveRecords = [...new Set(activeRecordsForGeom.map(item => safeNormalizeString(item.prov)))];
 
             let visibleFeatures = originalGeoData.features.filter(f => {
-                let fProv = (f.properties[PROP_PROVINCE] || "").toLowerCase().trim();
-                if (sProv) return fProv === sProv.toLowerCase().trim();
+                let fProv = safeNormalizeString(f.properties[PROP_PROVINCE]);
+                if (sProv) return fProv === safeNormalizeString(sProv);
                 if (sHQ || sArea) return validProvincesInActiveRecords.includes(fProv);
                 return true; 
             });
@@ -1184,8 +1192,8 @@
 
             currentMapLayer = L.geoJSON({ type: "FeatureCollection", features: visibleFeatures }, {
                 style: function(feature) {
-                    let prov = feature.properties[PROP_PROVINCE] || "";
-                    let dist = feature.properties[PROP_DISTRICT] || "";
+                    let prov = feature.properties[PROP_PROVINCE];
+                    let dist = feature.properties[PROP_DISTRICT];
                     let value = getDistrictValue(prov, dist, dataKey, sCat);
                     
                     return {
@@ -1196,8 +1204,8 @@
                     };
                 },
                 onEachFeature: function(feature, layer) {
-                    let prov = feature.properties[PROP_PROVINCE] || "";
-                    let dist = feature.properties[PROP_DISTRICT] || "";
+                    let prov = feature.properties[PROP_PROVINCE];
+                    let dist = feature.properties[PROP_DISTRICT];
                     layer.on({
                         mouseover: (e) => { e.target.setStyle({ weight: 2.5, color: '#1d4ed8' }); },
                         mouseout: (e) => { currentMapLayer.resetStyle(e.target); },
@@ -1211,11 +1219,13 @@
             }
         }
 
-        // DỰNG ĐỒ THỊ HAI TRỤC TUNG (MIXED CHART) VÀ BẢNG SỐ LIỆU CHI TIẾT
         function showReport(provinceName, districtName) {
             const sCat = catSelect.value;
+            let nProv = safeNormalizeString(provinceName);
+            let nDist = safeNormalizeString(districtName);
+
             let distRecords = myDatabase.filter(item => 
-                item.prov.toLowerCase().trim() === provinceName.toLowerCase().trim() && item.dist.toLowerCase().trim() === districtName.toLowerCase().trim()
+                safeNormalizeString(item.prov) === nProv && safeNormalizeString(item.dist) === nDist
             );
 
             if (distRecords.length === 0) {
@@ -1231,7 +1241,7 @@
                     let r = distRecords.find(item => item.cat === sCat);
                     return r ? parseNumericValue(r[monthKey]) : 0;
                 } else {
-                    let allR = distRecords.find(item => item.cat.toLowerCase().includes('all'));
+                    let allR = distRecords.find(item => safeNormalizeString(item.cat).includes('all'));
                     if (allR) return parseNumericValue(allR[monthKey]);
                     return distRecords.reduce((sum, item) => sum + parseNumericValue(item[monthKey]), 0);
                 }
@@ -1246,7 +1256,7 @@
                 <div class="report-header">
                     <h3>Huyện: ${districtName} (${provinceName})</h3>
                     <div style="font-size: 12px; color:#64748b; margin-top:4px;">
-                        Miền (HQ): <b>${distRecords[0].hq}</b> | Khu vực (Area): <b>${distRecords[0].area}</b><br>
+                        Miền (HQ): <b>${distRecords[0].hq || "N/A"}</b> | Khu vực (Area): <b>${distRecords[0].area || "N/A"}</b><br>
                         Danh mục (CAT): <span style="color: #1e3a8a; font-weight: bold;">${sCat || "Tất cả Danh mục"}</span>
                     </div>
                 </div>
@@ -1280,7 +1290,7 @@
                             type: 'line',
                             label: 'Doanh số (VND)',
                             data: monthsData.pfm,
-                            borderColor: '#f97316',        // ĐƯỜNG BIỂU DIỄN DOANH SỐ MÀU CAM
+                            borderColor: '#f97316',        
                             backgroundColor: 'transparent',
                             yAxisID: 'yAxisVND',           
                             borderWidth: 3,
@@ -1291,7 +1301,7 @@
                             type: 'bar',
                             label: 'Số lượng KH (ActC)',
                             data: monthsData.actC,
-                            backgroundColor: '#2563eb',    // CỘT SỐ LƯỢNG MÀU XANH DƯƠNG
+                            backgroundColor: '#2563eb',    
                             yAxisID: 'yAxisCount',         
                             order: 2,
                             maxBarThickness: 30
@@ -1318,9 +1328,8 @@
         }
 
         function selectDistrictProgrammatically(prov, dist) {
-            if (provinceSelect.value !== prov) {
+            if (safeNormalizeString(provinceSelect.value) !== safeNormalizeString(prov)) {
                 provinceSelect.value = prov;
-                // Kích hoạt sự kiện thay đổi tỉnh nhưng báo không tự động tìm Max huyện để tránh lặp click
                 handleProvinceChange(false); 
             }
             districtSelect.value = dist;
@@ -1328,9 +1337,7 @@
             showReport(prov, dist);
         }
 
-        // =========================================================
-        // HÀM XỬ LÝ LOGIC CHÍNH: TỰ ĐỘNG CHỌN HUYỆN CÓ DOANH SỐ CAO NHẤT
-        // =========================================================
+        // TỰ ĐỘNG CHỌN QUẬN HUYỆN ĐỈNH NHẤT KHÔNG SỢ LỖI NULL
         function handleProvinceChange(shouldAutoSelectTopDistrict = true) {
             const selectedProvince = provinceSelect.value;
             
@@ -1348,26 +1355,23 @@
             const sArea = areaSelect.value;
             const sCat = catSelect.value;
             const sMonth = monthSelect.value;
-            const dataKey = 'Pfm' + sMonth; // "Doanh số cao nhất" cố định theo cột Pfm của tháng được chọn
+            const dataKey = 'Pfm' + sMonth; 
 
-            // Trích xuất danh sách các huyện của tỉnh này đang có trong database
             const filteredRecords = myDatabase.filter(item => 
-                item.prov.toLowerCase().trim() === selectedProvince.toLowerCase().trim() &&
+                safeNormalizeString(item.prov) === safeNormalizeString(selectedProvince) &&
                 (!sHQ || item.hq === sHQ) &&
                 (!sArea || item.area === sArea) &&
                 (!sCat || item.cat === sCat)
             );
 
-            const districts = [...new Set(filteredRecords.map(item => item.dist))].sort();
+            const districts = [...new Set(filteredRecords.map(item => item.dist).filter(Boolean))].sort();
             
             districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
             districts.forEach(dist => {
-                let opt = document.createElement('option');
-                opt.value = dist; opt.textContent = dist; districtSelect.appendChild(opt);
+                let opt = document.createElement('option'); opt.value = dist; opt.textContent = dist; districtSelect.appendChild(opt);
             });
             districtSelect.disabled = false;
 
-            // NẾU ĐƯỢC PHÉP: TỰ ĐỘNG QUÉT TÌM HUYỆN ĐỈNH NHẤT ĐỂ TỰ ĐỘNG "NHẢY"
             if (shouldAutoSelectTopDistrict && districts.length > 0) {
                 let maxRevenue = -1;
                 let topPerformingDistrict = "";
@@ -1381,50 +1385,38 @@
                 });
 
                 if (topPerformingDistrict) {
-                    // Tự động gán giá trị vào ô chọn Quận/Huyện
                     districtSelect.value = topPerformingDistrict;
-                    refreshDashboard(false); // Vẽ bản đồ nhiệt
+                    refreshDashboard(false); 
 
-                    // Tự động Zoom tiêu cự vào riêng hình khối huyện đỉnh nhất này
                     const targetFeature = originalGeoData.features.filter(f => 
-                        f.properties[PROP_PROVINCE].toLowerCase().trim() === selectedProvince.toLowerCase().trim() &&
-                        f.properties[PROP_DISTRICT].toLowerCase().trim() === topPerformingDistrict.toLowerCase().trim()
+                        safeNormalizeString(f.properties[PROP_PROVINCE]) === safeNormalizeString(selectedProvince) &&
+                        safeNormalizeString(f.properties[PROP_DISTRICT]) === safeNormalizeString(topPerformingDistrict)
                     );
                     if (targetFeature.length > 0) {
                         map.fitBounds(L.geoJSON(targetFeature).getBounds(), { padding: [40, 40] });
                     }
-
-                    // Tự động dựng biểu đồ Mixed và Bảng số liệu cho huyện đó
                     showReport(selectedProvince, topPerformingDistrict);
                     return;
                 }
             }
-
             refreshDashboard(true);
         }
 
-        // ĐĂNG KÝ SỰ KIỆN LẮNG NGHE
+        // ĐĂNG KÝ SỰ KIỆN LẮNG NGHE BỘ LỌC
         hqSelect.addEventListener('change', function() { updateAreaOptions(); refreshDashboard(true); });
         areaSelect.addEventListener('change', function() { updateProvinceOptions(); refreshDashboard(true); });
-        
-        // Khi chọn xong tỉnh thành -> Kích hoạt tìm huyện doanh số cao nhất
         provinceSelect.addEventListener('change', function() { handleProvinceChange(true); });
         
-        // Khi người dùng chủ động chọn đổi huyện thủ công bằng tay
         districtSelect.addEventListener('change', function() {
             const selectedProvince = provinceSelect.value;
             const selectedDistrict = this.value;
-            if (!selectedDistrict) {
-                refreshDashboard(true);
-                return;
-            }
+            if (!selectedDistrict) { refreshDashboard(true); return; }
+            
             const target = originalGeoData.features.filter(f => 
-                f.properties[PROP_PROVINCE].toLowerCase().trim() === selectedProvince.toLowerCase().trim() &&
-                f.properties[PROP_DISTRICT].toLowerCase().trim() === selectedDistrict.toLowerCase().trim()
+                safeNormalizeString(f.properties[PROP_PROVINCE]) === safeNormalizeString(selectedProvince) &&
+                safeNormalizeString(f.properties[PROP_DISTRICT]) === safeNormalizeString(selectedDistrict)
             );
-            if (target.length > 0) {
-                map.fitBounds(L.geoJSON(target).getBounds(), { padding: [40, 40] });
-            }
+            if (target.length > 0) { map.fitBounds(L.geoJSON(target).getBounds(), { padding: [40, 40] }); }
             showReport(selectedProvince, selectedDistrict);
         });
 
