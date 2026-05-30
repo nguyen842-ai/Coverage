@@ -361,7 +361,7 @@
         // [VÙNG TRỐNG] DÁN TOÀN BỘ DANH SÁCH DATABASE CỦA BẠN VÀO ĐÂY
         // =========================================================
         const myDatabase = [
-            { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
+        { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Đốc", cat: "All Cat", actCJan: "74", actCFeb: "43", actCMar: "46", actCApr: "49", actCMay: "55", PfmJan: "716170294.444444", PfmFeb: "692128820.37037", PfmMar: "831899387.962963", PfmApr: "478151834.259259", PfmMay: "285762283.333333"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Phú", cat: "All Cat", actCJan: "38", actCFeb: "18", actCMar: "30", actCApr: "35", actCMay: "28", PfmJan: "240551274.410774", PfmFeb: "114737000", PfmMar: "190912312.962963", PfmApr: "178818300.925926", PfmMay: "65588013.8888889"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Thành", cat: "All Cat", actCJan: "71", actCFeb: "40", actCMar: "73", actCApr: "54", actCMay: "46", PfmJan: "286912144.158249", PfmFeb: "156127625", PfmMar: "249903750.925926", PfmApr: "177757845.37037", PfmMay: "436262337.037037"},
@@ -1098,7 +1098,7 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Phú Nhuận", cat: "F&B", actCJan: "51", actCFeb: "25", actCMar: "50", actCApr: "96", actCMay: "", PfmJan: "573575954.545455", PfmFeb: "151656000", PfmMar: "522288500", PfmApr: "747163100", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
-{ hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
+{ hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},    
         ];
 
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
@@ -1200,7 +1200,6 @@
             return parseFloat(val.toString().replace(/,/g, '')) || 0;
         }
 
-        // isTable = true sẽ ngăn chặn việc viết tắt số lượng
         function formatNumberDisplay(val, type, isTable = false) {
             let num = parseFloat(val) || 0;
             if (type === 'Pfm') {
@@ -1229,6 +1228,19 @@
             return '#1e3a8a';                             
         }
 
+        // HÀM XỬ LÝ SÁP NHẬP THÀNH PHỐ THỦ ĐỨC
+        function resolveDistrictName(prov, dist) {
+            let nProv = safeNormalizeString(prov);
+            let nDist = safeNormalizeString(dist);
+            // Gộp ranh giới Quận 2, Quận 9 cũ vào "Thủ Đức" khi đối chiếu Database
+            if (nProv === "hồ chí minh" || nProv === "ho chi minh") {
+                if (nDist === "quận 2" || nDist === "quan 2" || nDist === "quận 9" || nDist === "quan 9" || nDist === "thủ đức" || nDist === "thu duc") {
+                    return "Thủ Đức";
+                }
+            }
+            return dist;
+        }
+
         fetch('gadm41_VNM_2.json')
             .then(res => {
                 if(!res.ok) throw new Error("Không tìm thấy tệp JSON ranh giới.");
@@ -1238,8 +1250,6 @@
                 originalGeoData = data;
                 loader.style.display = 'none'; 
                 populateHQOptions();
-                
-                // Mặc định set Tháng thành Avg khi vừa load xong cho phù hợp thứ tự Dropdown
                 monthSelect.value = 'Avg';
                 refreshDashboard(true); 
             })
@@ -1316,7 +1326,6 @@
                 }
             };
 
-            // Nếu là Average thì cộng 5 tháng chia 5
             if (dataKey.endsWith('Avg')) {
                 let total = 0;
                 monthKeys.forEach(m => total += getSum(sDataType + m));
@@ -1345,10 +1354,9 @@
                 minVal = 900000;          
                 maxVal = 2700000000;      
             } else {
-                // Tính Min/Max cho biểu đồ số lượng KH (Dynamic)
                 let valuesArray = [];
                 validProvincesInActiveRecords.forEach(p => {
-                    let dists = [...new Set(activeRecordsForGeom.filter(i => safeNormalizeString(i.prov) === p).map(i => i.dist))];
+                    let dists = [...new Set(activeRecordsForGeom.filter(i => safeNormalizeString(i.prov) === safeNormalizeString(p)).map(i => i.dist))];
                     dists.forEach(d => {
                         valuesArray.push(getDistrictValue(p, d, dataKey, sCat, sDataType));
                     });
@@ -1374,7 +1382,8 @@
             currentMapLayer = L.geoJSON({ type: "FeatureCollection", features: visibleFeatures }, {
                 style: function(feature) {
                     let prov = feature.properties[PROP_PROVINCE];
-                    let dist = feature.properties[PROP_DISTRICT];
+                    let rawDist = feature.properties[PROP_DISTRICT];
+                    let dist = resolveDistrictName(prov, rawDist); // Hợp nhất Q2, Q9 -> Thủ Đức
                     let value = getDistrictValue(prov, dist, dataKey, sCat, sDataType);
                     
                     return {
@@ -1386,7 +1395,8 @@
                 },
                 onEachFeature: function(feature, layer) {
                     let prov = feature.properties[PROP_PROVINCE];
-                    let dist = feature.properties[PROP_DISTRICT];
+                    let rawDist = feature.properties[PROP_DISTRICT];
+                    let dist = resolveDistrictName(prov, rawDist); // Hợp nhất text nhãn
                     
                     if (showLabels) {
                         layer.bindTooltip(dist, {
@@ -1510,7 +1520,7 @@
                             type: 'line',
                             label: 'Sell out (VND)',
                             data: monthsData.pfm,
-                            borderColor: '#ea580c',  /* Đổi biểu đồ đường thành màu cam */      
+                            borderColor: '#ea580c',  
                             backgroundColor: 'transparent',
                             yAxisID: 'yAxisVND',           
                             borderWidth: 3,
@@ -1551,7 +1561,8 @@
             });
         }
 
-        function selectDistrictProgrammatically(prov, dist) {
+        function selectDistrictProgrammatically(prov, rawDist) {
+            let dist = resolveDistrictName(prov, rawDist);
             if (safeNormalizeString(provinceSelect.value) !== safeNormalizeString(prov)) {
                 provinceSelect.value = prov;
                 handleProvinceChange(false); 
@@ -1602,10 +1613,12 @@
                 if (topPerformingDistrict) {
                     refreshDashboard(false); 
 
-                    const targetFeature = originalGeoData.features.filter(f => 
-                        safeNormalizeString(f.properties[PROP_PROVINCE]) === safeNormalizeString(selectedProvince) &&
-                        safeNormalizeString(f.properties[PROP_DISTRICT]) === safeNormalizeString(topPerformingDistrict)
-                    );
+                    const targetFeature = originalGeoData.features.filter(f => {
+                        let fProv = safeNormalizeString(f.properties[PROP_PROVINCE]);
+                        let fDist = resolveDistrictName(f.properties[PROP_PROVINCE], f.properties[PROP_DISTRICT]);
+                        return fProv === safeNormalizeString(selectedProvince) && safeNormalizeString(fDist) === safeNormalizeString(topPerformingDistrict);
+                    });
+                    
                     if (targetFeature.length > 0) {
                         map.fitBounds(L.geoJSON(targetFeature).getBounds(), { padding: [40, 40] });
                     }
