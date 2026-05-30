@@ -100,16 +100,17 @@
         /* KHU VỰC CHỨA CÁC TOOL ĐIỀU KHIỂN TRÊN NỀN BẢN ĐỒ */
         .custom-map-filter-control {
             background: white;
-            padding: 12px;
+            padding: 8px 14px;
             border-radius: 8px;
             border: 1px solid #cbd5e1;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             display: flex;
-            flex-direction: column;
-            gap: 10px;
+            flex-direction: row; 
+            align-items: center;
+            gap: 16px;
             position: absolute;
             left: 44px;
-            top: 0px;
+            top: 5px; 
             margin: 0 !important;
             white-space: nowrap;
             z-index: 1000;
@@ -117,15 +118,13 @@
         .map-tool-item {
             display: flex;
             align-items: center;
-            gap: 8px;
-            justify-content: space-between;
+            gap: 6px;
         }
         .map-tool-item label {
             font-size: 11px;
             font-weight: 700;
             color: #475569;
             text-transform: uppercase;
-            width: 75px;
         }
         .map-tool-item select {
             padding: 5px 8px;
@@ -137,10 +136,10 @@
             background: #f8fafc;
             font-weight: 600;
             color: #1e3a8a;
-            min-width: 175px;
+            min-width: 135px;
         }
 
-        /* THƯỚC ĐO MÀU NHIỆT DỌC ĐÃ ĐƯỢC ĐỔI TRỤC */
+        /* THƯỚC ĐO MÀU NHIỆT DỌC */
         .map-legend-vertical {
             background: #ffffff;
             padding: 12px;
@@ -191,7 +190,7 @@
             white-space: nowrap;
         }
 
-        /* CÔNG TẮC SWITCH HIỆN TÊN QUẬN HUYỆN */
+        /* CÔNG TẮC SWITCH HIỆN NHÃN */
         .toggle-wrapper {
             display: flex;
             align-items: center;
@@ -247,7 +246,7 @@
             transform: translateX(14px);
         }
 
-        /* CSS CSS CHỮ NHÃN TRÊN BẢN ĐỒ */
+        /* CHỮ NHÃN TRÊN BẢN ĐỒ */
         .map-district-label {
             background: transparent !important;
             border: none !important;
@@ -1105,15 +1104,17 @@
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
 
-        const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-        const monthLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
+        // Đã giới hạn dữ liệu chỉ hiển thị các tháng có số liệu (Tháng 1 -> Tháng 5)
+        const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
+        const monthLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'];
 
-        let showLabels = true; 
+        // Đặt trạng thái mặc định của nhãn là TẮT (false)
+        let showLabels = false; 
         let originalGeoData = null; 
         let currentMapLayer = null; 
         let myChart = null; 
 
-        // Gắn Hộp công cụ chứa "Xem theo" và "Thời gian" lên map (Ngang hàng cạnh Zoom Control)
+        // Hộp công cụ chứa "Xem theo" và "Thời gian"
         const filterControl = L.control({ position: 'topleft' });
         filterControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'custom-map-filter-control');
@@ -1134,13 +1135,6 @@
                         <option value="Mar">Tháng 3</option>
                         <option value="Apr">Tháng 4</option>
                         <option value="May">Tháng 5</option>
-                        <option value="Jun">Tháng 6</option>
-                        <option value="Jul">Tháng 7</option>
-                        <option value="Aug">Tháng 8</option>
-                        <option value="Sep">Tháng 9</option>
-                        <option value="Oct">Tháng 10</option>
-                        <option value="Nov">Tháng 11</option>
-                        <option value="Dec">Tháng 12</option>
                     </select>
                 </div>
             `;
@@ -1148,7 +1142,7 @@
         };
         filterControl.addTo(map);
 
-        // Khởi tạo Thước đo dọc (Màu bên trái - Chữ bên phải) kèm Switch Hiện tên quận huyện
+        // Khởi tạo Thước đo dọc kèm Switch "Nhãn"
         const legendControl = L.control({ position: 'topleft' });
         legendControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'map-legend-vertical');
@@ -1163,7 +1157,7 @@
                     </div>
                 </div>
                 <div class="toggle-wrapper">
-                    <label class="toggle-label" for="labelToggleInput">Hiện tên quận huyện</label>
+                    <label class="toggle-label" for="labelToggleInput">Nhãn</label>
                     <label class="switch">
                         <input type="checkbox" id="labelToggleInput" ${showLabels ? 'checked' : ''}>
                         <span class="slider"></span>
@@ -1184,7 +1178,7 @@
         const PROP_PROVINCE = 'COUNTRY'; 
         const PROP_DISTRICT = 'NAME_1';  
 
-        // Khai báo liên kết DOM sau khi Control Bản đồ được khởi tạo xong
+        // Kết nối DOM Elements
         const hqSelect = document.getElementById('hqSelect');
         const areaSelect = document.getElementById('areaSelect');
         const provinceSelect = document.getElementById('provinceSelect');
@@ -1420,13 +1414,14 @@
                 }
             }
 
+            // Mảng dữ liệu tự động scale theo số lượng tháng (hiện tại là 5 tháng)
             const monthsData = {
                 actC: monthKeys.map(m => extractMonthVal('actC' + m)),
                 pfm: monthKeys.map(m => extractMonthVal('Pfm' + m))
             };
 
             let tableRowsHtml = '';
-            for (let i = 0; i < 12; i++) {
+            for (let i = 0; i < monthKeys.length; i++) {
                 let highlightStyle = (monthKeys[i] === sMonth) ? 'font-weight:600; background-color:#f0fdf4;' : '';
                 let textHighlight = (monthKeys[i] === sMonth) ? 'color:#2563eb; font-weight:700;' : '';
                 tableRowsHtml += `
