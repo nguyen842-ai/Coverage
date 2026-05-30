@@ -14,7 +14,8 @@
             padding: 0;
             height: 100%;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: #f0f4f8;
+            background-color: #f8fafc;
+            color: #1e293b;
         }
 
         .dashboard-wrapper {
@@ -23,7 +24,6 @@
             height: 100%;
         }
 
-        /* Giao diện chia đôi màn hình đối xứng tuyệt đối 50% - 50% */
         #map {
             width: 50%;
             height: 100%;
@@ -33,46 +33,48 @@
         #sidebar-right {
             width: 50%;
             background: #ffffff;
-            border-left: 1px solid #cbd5e1;
+            border-left: 1px solid #e2e8f0;
             padding: 30px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             overflow-y: auto;
             z-index: 999;
+            box-shadow: -4px 0 20px rgba(0, 0, 0, 0.02);
         }
 
         h1 {
-            font-size: 20px;
+            font-size: 22px;
             color: #1e3a8a;
             margin-top: 0;
-            margin-bottom: 4px;
+            margin-bottom: 6px;
             font-weight: 700;
+            letter-spacing: -0.5px;
         }
 
         .subtitle {
             font-size: 13px;
             color: #64748b;
             margin-top: 0;
-            margin-bottom: 20px;
+            margin-bottom: 24px;
+            line-height: 1.5;
         }
 
         .filter-row {
             display: flex;
-            gap: 12px;
-            margin-bottom: 12px;
+            gap: 16px;
+            margin-bottom: 16px;
         }
 
         .filter-group {
             flex: 1;
-            margin-bottom: 12px;
         }
 
         .filter-group label {
             display: block;
             font-size: 11px;
             font-weight: 600;
-            color: #64748b;
+            color: #475569;
             text-transform: uppercase;
             margin-bottom: 6px;
             letter-spacing: 0.5px;
@@ -80,108 +82,145 @@
 
         .filter-group select {
             width: 100%;
-            padding: 10px;
+            padding: 10px 12px;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
             background-color: #f8fafc;
-            color: #1e293b;
+            color: #0f172a;
             font-size: 13px;
             outline: none;
             cursor: pointer;
+            transition: all 0.2s ease;
         }
 
         .filter-group select:focus {
             border-color: #2563eb;
             background-color: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
         .heat-config-panel {
-            background: #eff6ff;
-            padding: 14px;
-            border-radius: 8px;
-            border: 1px solid #bfdbfe;
-            margin-top: 5px;
+            background: #f0fdf4;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #bbf7d0;
+            margin-top: 8px;
+            margin-bottom: 24px;
         }
 
-        /* THƯỚC ĐO MÀU NHIỆT */
-        .legend-container {
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
+        /* THƯỚC ĐO MÀU NHIỆT DỌC TRÊN BẢN ĐỒ */
+        .map-legend-vertical {
+            background: #ffffff;
             padding: 12px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            margin-top: 15px;
+            border-radius: 10px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            margin-top: 12px !important;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-width: 90px;
         }
-        .legend-title {
+        .legend-title-vertical {
             font-size: 11px;
-            font-weight: 600;
-            color: #1e40af;
+            font-weight: 700;
+            color: #1e3a8a;
             text-transform: uppercase;
-            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 4px;
+            width: 100%;
+            text-align: center;
         }
-        .legend-bar {
+        .legend-body-vertical {
             display: flex;
-            height: 12px;
-            border-radius: 4px;
-            overflow: hidden;
-            background: linear-gradient(to right, #93c5fd, #60a5fa, #2563eb, #1d4ed8, #1e3a8a);
+            gap: 10px;
+            height: 160px;
+            width: 100%;
+            justify-content: center;
         }
-        .legend-labels {
+        .legend-bar-vertical {
+            width: 12px;
+            height: 100%;
+            border-radius: 6px;
+            background: linear-gradient(to bottom, #1e3a8a, #1d4ed8, #2563eb, #60a5fa, #93c5fd);
+        }
+        .legend-labels-vertical {
             display: flex;
+            flex-direction: column;
             justify-content: space-between;
-            font-size: 11px;
+            font-size: 10px;
             color: #64748b;
-            margin-top: 4px;
+            font-weight: 600;
+            text-align: right;
+            max-width: 90px;
+            white-space: nowrap;
+        }
+
+        /* NHÃN QUẬN HUYỆN TRÊN MAP */
+        .map-district-label {
+            background: transparent !important;
+            border: none !important;
+            box-shadow: none !important;
+            font-size: 10px !important;
+            font-weight: bold !important;
+            color: #1e293b !important;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0px 0px 3px #fff;
+            padding: 0 !important;
+            pointer-events: none;
         }
 
         .report-container {
-            border-top: 2px solid #e2e8f0;
-            padding-top: 15px;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 20px;
         }
 
         .report-header {
             background: #f8fafc;
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid #cbd5e1;
-            margin-bottom: 15px;
+            padding: 16px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
         }
 
         .report-header h3 {
-            margin: 0 0 4px 0;
+            margin: 0 0 6px 0;
             color: #1e3a8a;
-            font-size: 15px;
+            font-size: 16px;
+            font-weight: 700;
         }
 
         .data-table {
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
+            margin-top: 15px;
         }
 
         .data-table th {
-            background: #e0f2fe;
-            color: #0369a1;
-            padding: 8px;
+            background: #f1f5f9;
+            color: #475569;
+            padding: 10px 12px;
             font-weight: 600;
-            border-bottom: 2px solid #bae6fd;
+            border-bottom: 2px solid #cbd5e1;
             text-align: left;
         }
 
         .data-table td {
-            padding: 8px;
+            padding: 10px 12px;
             border-bottom: 1px solid #e2e8f0;
             color: #334155;
         }
 
         .data-table tr:hover {
-            background: #f0f7ff;
+            background: #f8fafc;
         }
 
         .no-data {
             color: #94a3b8;
             text-align: center;
-            padding: 30px 0;
+            padding: 40px 0;
             font-style: italic;
             font-size: 13px;
         }
@@ -190,6 +229,7 @@
             font-size: 13px;
             color: #2563eb;
             font-weight: 500;
+            margin-bottom: 15px;
         }
     </style>
 </head>
@@ -219,27 +259,22 @@
                     <select id="provinceSelect"><option value="">-- Tất cả Tỉnh/Thành thuộc DB --</option></select>
                 </div>
                 <div class="filter-group">
-                    <label for="districtSelect">Quận / Huyện</label>
-                    <select id="districtSelect" disabled><option value="">-- Chọn Quận/Huyện --</option></select>
+                    <label for="catSelect">CAT (Danh mục)</label>
+                    <select id="catSelect"><option value="">-- Tất cả CAT --</option></select>
                 </div>
-            </div>
-
-            <div class="filter-group">
-                <label for="catSelect">CAT (Danh mục)</label>
-                <select id="catSelect"><option value="">-- Tất cả CAT --</option></select>
             </div>
 
             <div class="heat-config-panel">
                 <div class="filter-row" style="margin-bottom: 0;">
                     <div class="filter-group" style="margin-bottom: 0;">
-                        <label style="color:#1e40af;" for="dataTypeSelect">Xem Bản đồ Nhiệt theo</label>
+                        <label style="color:#166534;" for="dataTypeSelect">Xem Bản đồ Nhiệt theo</label>
                         <select id="dataTypeSelect" style="background:#fff;">
                             <option value="Pfm">Hiệu suất (Performance)</option>
                             <option value="actC">Số lượng (Act Count)</option>
                         </select>
                     </div>
                     <div class="filter-group" style="margin-bottom: 0;">
-                        <label style="color:#1e40af;" for="monthSelect">Thời gian (Tháng)</label>
+                        <label style="color:#166534;" for="monthSelect">Thời gian (Tháng)</label>
                         <select id="monthSelect" style="background:#fff;">
                             <option value="Jan">Tháng 1</option>
                             <option value="Feb">Tháng 2</option>
@@ -248,16 +283,6 @@
                             <option value="May">Tháng 5</option>
                         </select>
                     </div>
-                </div>
-            </div>
-
-            <div class="legend-container">
-                <div class="legend-title" id="legendTitle">Mức độ chỉ số</div>
-                <div class="legend-bar"></div>
-                <div class="legend-labels">
-                    <span id="legendMin">Thấp</span>
-                    <span>Trung bình</span>
-                    <span id="legendMax">Cao</span>
                 </div>
             </div>
 
@@ -271,7 +296,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================
-        // DÒNG 129: DÁN TOÀN BỘ DANH SÁCH DATABASE THỰC TẾ CỦA BẠN VÀO ĐÂY
+        // DÁN TOÀN BỘ DANH SÁCH DATABASE THỰC TẾ CỦA BẠN VÀO ĐÂY
         // =========================================================
         const myDatabase = [
             { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
@@ -1012,10 +1037,29 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
-       ];
+ ];
 
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
+
+        // Tạo Thước đo nhiệt dọc tích hợp thẳng vào góc trái Bản Đồ dưới Zoom Control
+        const legendControl = L.control({ position: 'topleft' });
+        legendControl.onAdd = function(map) {
+            const div = L.DomUtil.create('div', 'map-legend-vertical');
+            div.innerHTML = `
+                <div class="legend-title-vertical">Hiệu Suất</div>
+                <div class="legend-body-vertical">
+                    <div class="legend-labels-vertical">
+                        <span id="legendMaxMap">Cao</span>
+                        <span>Trung bình</span>
+                        <span id="legendMinMap">Thấp</span>
+                    </div>
+                    <div class="legend-bar-vertical"></div>
+                </div>
+            `;
+            return div;
+        };
+        legendControl.addTo(map);
 
         const PROP_PROVINCE = 'COUNTRY'; 
         const PROP_DISTRICT = 'NAME_1';  
@@ -1028,7 +1072,6 @@
         const hqSelect = document.getElementById('hqSelect');
         const areaSelect = document.getElementById('areaSelect');
         const provinceSelect = document.getElementById('provinceSelect');
-        const districtSelect = document.getElementById('districtSelect');
         const catSelect = document.getElementById('catSelect');
         const dataTypeSelect = document.getElementById('dataTypeSelect');
         const monthSelect = document.getElementById('monthSelect');
@@ -1076,7 +1119,7 @@
             })
             .then(data => {
                 originalGeoData = data;
-                loader.style.display = 'none'; // Tắt màn hình chờ khi tải hoàn tất thành công
+                loader.style.display = 'none'; 
                 populateHQOptions();
                 refreshDashboard(true); 
             })
@@ -1147,7 +1190,7 @@
                 return rec ? parseNumericValue(rec[dataKey]) : 0;
             } else {
                 let allRec = distRecords.find(item => safeNormalizeString(item.cat).includes('all'));
-                if (allRec) return parseNumericValue(allRec[dataKey]); // FIX: Đã sửa lỗi tham chiếu allRec[allRec]
+                if (allRec) return parseNumericValue(allRec[dataKey]); 
                 return distRecords.reduce((sum, item) => sum + parseNumericValue(item[dataKey]), 0);
             }
         }
@@ -1174,9 +1217,9 @@
                 maxVal = valuesArray.length ? Math.max(...valuesArray) : 100;
             }
 
-            document.getElementById('legendTitle').innerText = `Mức độ: ${sDataType === 'Pfm' ? 'Hiệu suất' : 'Số lượng'} (${monthSelect.options[monthSelect.selectedIndex].text})`;
-            document.getElementById('legendMin').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType) : "Thấp";
-            document.getElementById('legendMax').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
+            // Cập nhật giá trị vào bản đồ nhiệt dọc trên map
+            document.getElementById('legendMinMap').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType) : "Thấp";
+            document.getElementById('legendMaxMap').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
 
             const activeRecordsForGeom = myDatabase.filter(item => (!sHQ || item.hq === sHQ) && (!sArea || item.area === sArea) && (!sProv || item.prov === sProv) && (!sCat || item.cat === sCat));
             const validProvincesInActiveRecords = [...new Set(activeRecordsForGeom.map(item => safeNormalizeString(item.prov)))];
@@ -1197,17 +1240,25 @@
                     let value = getDistrictValue(prov, dist, dataKey, sCat);
                     
                     return {
-                        color: "#475569", 
-                        weight: 1.1,
+                        color: "#64748b", 
+                        weight: 1.0,
                         fillColor: getHeatColor(value, minVal, maxVal),
-                        fillOpacity: 0.95
+                        fillOpacity: 0.85
                     };
                 },
                 onEachFeature: function(feature, layer) {
                     let prov = feature.properties[PROP_PROVINCE];
                     let dist = feature.properties[PROP_DISTRICT];
+                    
+                    // GẮN NHÃN QUẬN/HUYỆN TRỰC TIẾP LÊN VÙNG BẢN ĐỒ
+                    layer.bindTooltip(dist, {
+                        permanent: true,
+                        direction: 'center',
+                        className: 'map-district-label'
+                    });
+
                     layer.on({
-                        mouseover: (e) => { e.target.setStyle({ weight: 2.5, color: '#1d4ed8' }); },
+                        mouseover: (e) => { e.target.setStyle({ weight: 2.5, color: '#2563eb', fillOpacity: 0.95 }); },
                         mouseout: (e) => { currentMapLayer.resetStyle(e.target); },
                         click: (e) => { selectDistrictProgrammatically(prov, dist); }
                     });
@@ -1230,8 +1281,8 @@
 
             if (distRecords.length === 0) {
                 reportContainer.innerHTML = `
-                    <div class="report-header"><h3>Huyện: ${districtName}</h3><span style="font-size:12px;color:#64748b">${provinceName}</span></div>
-                    <div class="no-data">⚠️ Không có dữ liệu doanh số của địa bàn này trong DB.</div>
+                    <div class="report-header"><h3>Địa bàn: ${districtName}</h3><span style="font-size:12px;color:#64748b">${provinceName}</span></div>
+                    <div class="no-data">⚠️ Không có dữ liệu doanh số của địa bàn này trong hệ thống.</div>
                 `;
                 return;
             }
@@ -1254,14 +1305,14 @@
 
             reportContainer.innerHTML = `
                 <div class="report-header">
-                    <h3>Huyện: ${districtName} (${provinceName})</h3>
-                    <div style="font-size: 12px; color:#64748b; margin-top:4px;">
+                    <h3>Địa bàn: ${districtName} (${provinceName})</h3>
+                    <div style="font-size: 12px; color:#64748b; margin-top:4px; line-height: 1.6;">
                         Miền (HQ): <b>${distRecords[0].hq || "N/A"}</b> | Khu vực (Area): <b>${distRecords[0].area || "N/A"}</b><br>
-                        Danh mục (CAT): <span style="color: #1e3a8a; font-weight: bold;">${sCat || "Tất cả Danh mục"}</span>
+                        Danh mục (CAT): <span style="color: #2563eb; font-weight: bold;">${sCat || "Tất cả Danh mục"}</span>
                     </div>
                 </div>
                 
-                <div style="margin-bottom: 25px; background: #ffffff; padding: 12px; border-radius: 8px; border: 1px solid #cbd5e1; height: 260px;">
+                <div style="margin-bottom: 25px; background: #ffffff; padding: 16px; border-radius: 12px; border: 1px solid #e2e8f0; height: 280px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
                     <canvas id="mixedChart"></canvas>
                 </div>
 
@@ -1274,7 +1325,7 @@
                         <tr><td>Tháng 2</td><td>${formatNumberDisplay(monthsData.actC[1], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[1], 'Pfm')}</td></tr>
                         <tr><td>Tháng 3</td><td>${formatNumberDisplay(monthsData.actC[2], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[2], 'Pfm')}</td></tr>
                         <tr><td>Tháng 4</td><td>${formatNumberDisplay(monthsData.actC[3], 'actC')}</td><td style="text-align:right; font-weight:500;">${formatNumberDisplay(monthsData.pfm[3], 'Pfm')}</td></tr>
-                        <tr><td>Tháng 5</td><td>${formatNumberDisplay(monthsData.actC[4], 'actC')}</td><td style="text-align:right; font-weight:600; color:#1e3a8a;">${formatNumberDisplay(monthsData.pfm[4], 'Pfm')}</td></tr>
+                        <tr><td>Tháng 5</td><td>${formatNumberDisplay(monthsData.actC[4], 'actC')}</td><td style="text-align:right; font-weight:600; color:#2563eb;">${formatNumberDisplay(monthsData.pfm[4], 'Pfm')}</td></tr>
                     </tbody>
                 </table>
             `;
@@ -1290,7 +1341,7 @@
                             type: 'line',
                             label: 'Doanh số (VND)',
                             data: monthsData.pfm,
-                            borderColor: '#f97316',        
+                            borderColor: '#10b981',        
                             backgroundColor: 'transparent',
                             yAxisID: 'yAxisVND',           
                             borderWidth: 3,
@@ -1301,16 +1352,20 @@
                             type: 'bar',
                             label: 'Số lượng KH (ActC)',
                             data: monthsData.actC,
-                            backgroundColor: '#2563eb',    
+                            backgroundColor: '#3b82f6',    
                             yAxisID: 'yAxisCount',         
                             order: 2,
-                            maxBarThickness: 30
+                            maxBarThickness: 24,
+                            borderRadius: 4
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { font: { family: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif', size: 11 } } }
+                    },
                     scales: {
                         yAxisCount: {
                             type: 'linear', position: 'left',
@@ -1318,7 +1373,7 @@
                         },
                         yAxisVND: {
                             type: 'linear', position: 'right',
-                            title: { display: true, text: 'Doanh số (VND)', color: '#f97316', font: { size: 11, weight: 'bold' } },
+                            title: { display: true, text: 'Doanh số (VND)', color: '#10b981', font: { size: 11, weight: 'bold' } },
                             ticks: { callback: function(value) { return new Intl.NumberFormat('en-US').format(value); } },
                             grid: { drawOnChartArea: false } 
                         }
@@ -1332,7 +1387,6 @@
                 provinceSelect.value = prov;
                 handleProvinceChange(false); 
             }
-            districtSelect.value = dist;
             refreshDashboard(false);
             showReport(prov, dist);
         }
@@ -1341,8 +1395,6 @@
             const selectedProvince = provinceSelect.value;
             
             if (!selectedProvince) {
-                districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-                districtSelect.disabled = true;
                 reportContainer.innerHTML = '<div class="no-data">Bấm vào một vùng bất kỳ trên bản đồ nhiệt hoặc chọn bộ lọc để xem số liệu chi tiết.</div>';
                 refreshDashboard(true);
                 return;
@@ -1364,12 +1416,6 @@
             );
 
             const districts = [...new Set(filteredRecords.map(item => item.dist).filter(Boolean))].sort();
-            
-            districtSelect.innerHTML = '<option value="">-- Chọn Quận/Huyện --</option>';
-            districts.forEach(dist => {
-                let opt = document.createElement('option'); opt.value = dist; opt.textContent = dist; districtSelect.appendChild(opt);
-            });
-            districtSelect.disabled = false;
 
             if (shouldAutoSelectTopDistrict && districts.length > 0) {
                 let maxRevenue = -1;
@@ -1384,7 +1430,6 @@
                 });
 
                 if (topPerformingDistrict) {
-                    districtSelect.value = topPerformingDistrict;
                     refreshDashboard(false); 
 
                     const targetFeature = originalGeoData.features.filter(f => 
@@ -1404,20 +1449,6 @@
         hqSelect.addEventListener('change', function() { updateAreaOptions(); refreshDashboard(true); });
         areaSelect.addEventListener('change', function() { updateProvinceOptions(); refreshDashboard(true); });
         provinceSelect.addEventListener('change', function() { handleProvinceChange(true); });
-        
-        districtSelect.addEventListener('change', function() {
-            const selectedProvince = provinceSelect.value;
-            const selectedDistrict = this.value;
-            if (!selectedDistrict) { refreshDashboard(true); return; }
-            
-            const target = originalGeoData.features.filter(f => 
-                safeNormalizeString(f.properties[PROP_PROVINCE]) === safeNormalizeString(selectedProvince) &&
-                safeNormalizeString(f.properties[PROP_DISTRICT]) === safeNormalizeString(selectedDistrict)
-            );
-            if (target.length > 0) { map.fitBounds(L.geoJSON(target).getBounds(), { padding: [40, 40] }); }
-            showReport(selectedProvince, selectedDistrict);
-        });
-
         catSelect.addEventListener('change', function() { refreshDashboard(false); });
         dataTypeSelect.addEventListener('change', () => refreshDashboard(false));
         monthSelect.addEventListener('change', () => refreshDashboard(false));
