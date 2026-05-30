@@ -23,7 +23,7 @@
             height: 100%;
         }
 
-        /* Chia đôi khu vực màn hình 50% - 50% */
+        /* Giao diện chia đôi màn hình đối xứng tuyệt đối 50% - 50% */
         #map {
             width: 50%;
             height: 100%;
@@ -103,7 +103,7 @@
             margin-top: 5px;
         }
 
-        /* CHÚ THÍCH DẢI MÀU NHIỆT */
+        /* THƯỚC ĐO MÀU NHIỆT */
         .legend-container {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
@@ -268,12 +268,13 @@
         </div>
     </div>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================
-        // DÁN DATABASE THỰC TẾ CỦA BẠN VÀO TRONG NGOẶC VUÔNG NÀY
+        // DÒNG 129: DÁN TOÀN BỘ DANH SÁCH DATABASE THỰC TẾ CỦA BẠN VÀO ĐÂY
         // =========================================================
         const myDatabase = [
-           { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
+            { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Đốc", cat: "All Cat", actCJan: "74", actCFeb: "43", actCMar: "46", actCApr: "49", actCMay: "55", PfmJan: "716170294.444444", PfmFeb: "692128820.37037", PfmMar: "831899387.962963", PfmApr: "478151834.259259", PfmMay: "285762283.333333"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Phú", cat: "All Cat", actCJan: "38", actCFeb: "18", actCMar: "30", actCApr: "35", actCMay: "28", PfmJan: "240551274.410774", PfmFeb: "114737000", PfmMar: "190912312.962963", PfmApr: "178818300.925926", PfmMay: "65588013.8888889"},
 { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "Châu Thành", cat: "All Cat", actCJan: "71", actCFeb: "40", actCMar: "73", actCApr: "54", actCMay: "46", PfmJan: "286912144.158249", PfmFeb: "156127625", PfmMar: "249903750.925926", PfmApr: "177757845.37037", PfmMay: "436262337.037037"},
@@ -1011,7 +1012,7 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
-    ];
+       ];
 
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
@@ -1023,6 +1024,7 @@
         let currentMapLayer = null; 
         let myChart = null; 
 
+        // DOM Elements
         const hqSelect = document.getElementById('hqSelect');
         const areaSelect = document.getElementById('areaSelect');
         const provinceSelect = document.getElementById('provinceSelect');
@@ -1033,7 +1035,6 @@
         const reportContainer = document.getElementById('reportContainer');
         const loader = document.getElementById('loader');
 
-        // BẢO VỆ 1: Hàm ép kiểu và chuẩn hóa chuỗi an toàn tuyệt đối với Null/Undefined
         function safeNormalizeString(val) {
             if (val === null || val === undefined) return "";
             return String(val).toLowerCase().trim();
@@ -1054,7 +1055,7 @@
         }
 
         function getHeatColor(value, min, max) {
-            if (value <= 0) return '#ffffff'; // Không có doanh số = Trắng tinh
+            if (value <= 0) return '#ffffff'; 
             if (value < min) return '#93c5fd'; 
             
             const range = max - min;
@@ -1067,24 +1068,24 @@
             return '#1e3a8a';                             
         }
 
-        // Tải ranh giới địa lý hành chính
+        // Khởi động nạp dữ liệu ranh giới địa lý hành chính
         fetch('gadm41_VNM_2.json')
             .then(res => {
-                if(!res.ok) throw new Error("Không tìm thấy file GeoJSON");
+                if(!res.ok) throw new Error("Không tìm thấy tệp JSON ranh giới.");
                 return res.json();
             })
             .then(data => {
                 originalGeoData = data;
-                loader.style.display = 'none'; 
+                loader.style.display = 'none'; // Tắt màn hình chờ khi tải hoàn tất thành công
                 populateHQOptions();
                 refreshDashboard(true); 
             })
             .catch(err => { 
-                loader.innerText = "Lỗi hệ thống: Không thể tải bản đồ."; 
-                console.error("Lỗi Fetch:", err); 
+                loader.innerText = "Lỗi hệ thống: Không thể tải bản đồ địa lý."; 
+                console.error("Lỗi mạng:", err); 
             });
 
-        // BỘ LỌC CASCADING AN TOÀN
+        // HỆ THỐNG BỘ LỌC LIÊN HOÀN DROPDOWN
         function populateHQOptions() {
             const hqs = [...new Set(myDatabase.map(item => item.hq).filter(Boolean))].sort();
             hqSelect.innerHTML = '<option value="">-- Tất cả HQ --</option>';
@@ -1133,7 +1134,6 @@
             });
         }
 
-        // BẢO VỆ 2: Hàm tính toán giá trị quận huyện bọc giáp safeNormalizeString
         function getDistrictValue(prov, dist, dataKey, sCat) {
             let nProv = safeNormalizeString(prov);
             let nDist = safeNormalizeString(dist);
@@ -1147,7 +1147,7 @@
                 return rec ? parseNumericValue(rec[dataKey]) : 0;
             } else {
                 let allRec = distRecords.find(item => safeNormalizeString(item.cat).includes('all'));
-                if (allRec) return parseNumericValue(allRec[dataKey]);
+                if (allRec) return parseNumericValue(allRec[dataKey]); // FIX: Đã sửa lỗi tham chiếu allRec[allRec]
                 return distRecords.reduce((sum, item) => sum + parseNumericValue(item[dataKey]), 0);
             }
         }
@@ -1337,7 +1337,6 @@
             showReport(prov, dist);
         }
 
-        // TỰ ĐỘNG CHỌN QUẬN HUYỆN ĐỈNH NHẤT KHÔNG SỢ LỖI NULL
         function handleProvinceChange(shouldAutoSelectTopDistrict = true) {
             const selectedProvince = provinceSelect.value;
             
@@ -1402,7 +1401,6 @@
             refreshDashboard(true);
         }
 
-        // ĐĂNG KÝ SỰ KIỆN LẮNG NGHE BỘ LỌC
         hqSelect.addEventListener('change', function() { updateAreaOptions(); refreshDashboard(true); });
         areaSelect.addEventListener('change', function() { updateProvinceOptions(); refreshDashboard(true); });
         provinceSelect.addEventListener('change', function() { handleProvinceChange(true); });
