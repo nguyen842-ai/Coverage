@@ -139,19 +139,19 @@
             min-width: 135px;
         }
 
-        /* THƯỚC ĐO MÀU NHIỆT DỌC */
+        /* THƯỚC ĐO MÀU NHIỆT DỌC ĐÃ ĐƯỢC ÉP HẸP TỐI ĐA */
         .map-legend-vertical {
             background: #ffffff;
-            padding: 12px;
-            border-radius: 10px;
+            padding: 8px 10px;
+            border-radius: 8px;
             border: 1px solid #cbd5e1;
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
             margin-top: 12px !important;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 8px;
-            min-width: 105px;
+            gap: 6px;
+            width: max-content;
         }
         .legend-title-vertical {
             font-size: 11px;
@@ -166,8 +166,8 @@
         }
         .legend-body-vertical {
             display: flex;
-            gap: 10px;
-            height: 150px;
+            gap: 8px;
+            height: 120px;
             width: 100%;
             justify-content: flex-start;
             align-items: stretch;
@@ -197,12 +197,12 @@
             justify-content: space-between;
             width: 100%;
             margin-top: 4px;
-            padding-top: 8px;
+            padding-top: 6px;
             border-top: 1px solid #f1f5f9;
             gap: 6px;
         }
         .toggle-label {
-            font-size: 11px;
+            font-size: 10px;
             font-weight: 600;
             color: #475569;
             user-select: none;
@@ -211,8 +211,8 @@
         .switch {
             position: relative;
             display: inline-block;
-            width: 32px;
-            height: 18px;
+            width: 28px;
+            height: 16px;
             flex-shrink: 0;
         }
         .switch input {
@@ -231,8 +231,8 @@
         .slider:before {
             position: absolute;
             content: "";
-            height: 14px;
-            width: 14px;
+            height: 12px;
+            width: 12px;
             left: 2px;
             bottom: 2px;
             background-color: white;
@@ -243,7 +243,7 @@
             background-color: #2563eb;
         }
         input:checked + .slider:before {
-            transform: translateX(14px);
+            transform: translateX(12px);
         }
 
         /* CHỮ NHÃN TRÊN BẢN ĐỒ */
@@ -1104,17 +1104,15 @@
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
 
-        // Đã giới hạn dữ liệu chỉ hiển thị các tháng có số liệu (Tháng 1 -> Tháng 5)
         const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May'];
         const monthLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5'];
 
-        // Đặt trạng thái mặc định của nhãn là TẮT (false)
         let showLabels = false; 
         let originalGeoData = null; 
         let currentMapLayer = null; 
         let myChart = null; 
 
-        // Hộp công cụ chứa "Xem theo" và "Thời gian"
+        // Hộp công cụ trên Map
         const filterControl = L.control({ position: 'topleft' });
         filterControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'custom-map-filter-control');
@@ -1130,6 +1128,7 @@
                 <div class="map-tool-item">
                     <label for="monthSelect">Thời gian:</label>
                     <select id="monthSelect">
+                        <option value="Avg">Trung bình tất cả các tháng</option>
                         <option value="Jan">Tháng 1</option>
                         <option value="Feb">Tháng 2</option>
                         <option value="Mar">Tháng 3</option>
@@ -1142,7 +1141,7 @@
         };
         filterControl.addTo(map);
 
-        // Khởi tạo Thước đo dọc kèm Switch "Nhãn"
+        // Thước đo dọc
         const legendControl = L.control({ position: 'topleft' });
         legendControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'map-legend-vertical');
@@ -1201,16 +1200,19 @@
             return parseFloat(val.toString().replace(/,/g, '')) || 0;
         }
 
-        function formatNumberDisplay(val, type) {
+        // isTable = true sẽ ngăn chặn việc viết tắt số lượng
+        function formatNumberDisplay(val, type, isTable = false) {
             let num = parseFloat(val) || 0;
             if (type === 'Pfm') {
-                if (num === 2700000000) return "2.7 BVND";
-                if (num === 900000) return "0.9 MVND";
-                if (num >= 1000000000) return (num / 1000000000).toFixed(1) + " BVND";
-                if (num >= 100000) return (num / 1000000).toFixed(1) + " MVND";
-                return new Intl.NumberFormat('en-US').format(num) + " VND";
+                if (!isTable) {
+                    if (num === 2700000000) return "2.7 BVND";
+                    if (num === 900000) return "0.9 MVND";
+                    if (num >= 1000000000) return (num / 1000000000).toFixed(1) + " BVND";
+                    if (num >= 1000000) return (num / 1000000).toFixed(1) + " MVND";
+                }
+                return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num) + " VND";
             }
-            return new Intl.NumberFormat('en-US').format(num);
+            return new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 }).format(num);
         }
 
         function getHeatColor(value, min, max) {
@@ -1236,6 +1238,9 @@
                 originalGeoData = data;
                 loader.style.display = 'none'; 
                 populateHQOptions();
+                
+                // Mặc định set Tháng thành Avg khi vừa load xong cho phù hợp thứ tự Dropdown
+                monthSelect.value = 'Avg';
                 refreshDashboard(true); 
             })
             .catch(err => { 
@@ -1291,7 +1296,7 @@
             });
         }
 
-        function getDistrictValue(prov, dist, dataKey, sCat) {
+        function getDistrictValue(prov, dist, dataKey, sCat, sDataType) {
             let nProv = safeNormalizeString(prov);
             let nDist = safeNormalizeString(dist);
 
@@ -1299,13 +1304,25 @@
                 safeNormalizeString(item.prov) === nProv && safeNormalizeString(item.dist) === nDist
             );
             if (distRecords.length === 0) return 0;
-            if (sCat) {
-                let rec = distRecords.find(item => item.cat === sCat);
-                return rec ? parseNumericValue(rec[dataKey]) : 0;
+            
+            const getSum = (key) => {
+                if (sCat) {
+                    let rec = distRecords.find(item => item.cat === sCat);
+                    return rec ? parseNumericValue(rec[key]) : 0;
+                } else {
+                    let allRec = distRecords.find(item => safeNormalizeString(item.cat).includes('all'));
+                    if (allRec) return parseNumericValue(allRec[key]); 
+                    return distRecords.reduce((sum, item) => sum + parseNumericValue(item[key]), 0);
+                }
+            };
+
+            // Nếu là Average thì cộng 5 tháng chia 5
+            if (dataKey.endsWith('Avg')) {
+                let total = 0;
+                monthKeys.forEach(m => total += getSum(sDataType + m));
+                return total / monthKeys.length;
             } else {
-                let allRec = distRecords.find(item => safeNormalizeString(item.cat).includes('all'));
-                if (allRec) return parseNumericValue(allRec[dataKey]); 
-                return distRecords.reduce((sum, item) => sum + parseNumericValue(item[dataKey]), 0);
+                return getSum(dataKey);
             }
         }
 
@@ -1320,23 +1337,30 @@
             const sMonth = monthSelect.value;
             const dataKey = sDataType + sMonth;
 
+            const activeRecordsForGeom = myDatabase.filter(item => (!sHQ || item.hq === sHQ) && (!sArea || item.area === sArea) && (!sProv || item.prov === sProv) && (!sCat || item.cat === sCat));
+            const validProvincesInActiveRecords = [...new Set(activeRecordsForGeom.map(item => safeNormalizeString(item.prov)))];
+
             let minVal, maxVal;
             if (sDataType === 'Pfm') {
                 minVal = 900000;          
                 maxVal = 2700000000;      
             } else {
-                const activeRecords = myDatabase.filter(item => (!sHQ || item.hq === sHQ) && (!sArea || item.area === sArea) && (!sProv || item.prov === sProv) && (!sCat || item.cat === sCat));
-                let valuesArray = activeRecords.map(item => parseNumericValue(item[dataKey])).filter(v => v > 0);
-                minVal = valuesArray.length ? Math.min(...valuesArray) : 0;
-                maxVal = valuesArray.length ? Math.max(...valuesArray) : 100;
+                // Tính Min/Max cho biểu đồ số lượng KH (Dynamic)
+                let valuesArray = [];
+                validProvincesInActiveRecords.forEach(p => {
+                    let dists = [...new Set(activeRecordsForGeom.filter(i => safeNormalizeString(i.prov) === p).map(i => i.dist))];
+                    dists.forEach(d => {
+                        valuesArray.push(getDistrictValue(p, d, dataKey, sCat, sDataType));
+                    });
+                });
+                let filteredArr = valuesArray.filter(v => v > 0);
+                minVal = filteredArr.length ? Math.min(...filteredArr) : 0;
+                maxVal = filteredArr.length ? Math.max(...filteredArr) : 100;
             }
 
             document.getElementById('legendTitleMap').innerText = sDataType === 'Pfm' ? 'Sell out' : 'Số lượng KH';
-            document.getElementById('legendMinMap').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType) : "Thấp";
-            document.getElementById('legendMaxMap').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
-
-            const activeRecordsForGeom = myDatabase.filter(item => (!sHQ || item.hq === sHQ) && (!sArea || item.area === sArea) && (!sProv || item.prov === sProv) && (!sCat || item.cat === sCat));
-            const validProvincesInActiveRecords = [...new Set(activeRecordsForGeom.map(item => safeNormalizeString(item.prov)))];
+            document.getElementById('legendMinMap').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType, false) : "Thấp";
+            document.getElementById('legendMaxMap').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType, false) : "Cao";
 
             let visibleFeatures = originalGeoData.features.filter(f => {
                 let fProv = safeNormalizeString(f.properties[PROP_PROVINCE]);
@@ -1351,7 +1375,7 @@
                 style: function(feature) {
                     let prov = feature.properties[PROP_PROVINCE];
                     let dist = feature.properties[PROP_DISTRICT];
-                    let value = getDistrictValue(prov, dist, dataKey, sCat);
+                    let value = getDistrictValue(prov, dist, dataKey, sCat, sDataType);
                     
                     return {
                         color: "#64748b", 
@@ -1373,7 +1397,7 @@
                     }
 
                     layer.on({
-                        mouseover: (e) => { e.target.setStyle({ weight: 2.5, color: '#2563eb', fillOpacity: 0.95 }); },
+                        mouseover: (e) => { e.target.setStyle({ weight: 2.5, color: '#ea580c', fillOpacity: 0.95 }); },
                         mouseout: (e) => { currentMapLayer.resetStyle(e.target); },
                         click: (e) => { selectDistrictProgrammatically(prov, dist); }
                     });
@@ -1414,31 +1438,50 @@
                 }
             }
 
-            // Mảng dữ liệu tự động scale theo số lượng tháng (hiện tại là 5 tháng)
             const monthsData = {
                 actC: monthKeys.map(m => extractMonthVal('actC' + m)),
                 pfm: monthKeys.map(m => extractMonthVal('Pfm' + m))
             };
 
             let tableRowsHtml = '';
+            let sumActC = 0, sumPfm = 0;
+
             for (let i = 0; i < monthKeys.length; i++) {
-                let highlightStyle = (monthKeys[i] === sMonth) ? 'font-weight:600; background-color:#f0fdf4;' : '';
-                let textHighlight = (monthKeys[i] === sMonth) ? 'color:#2563eb; font-weight:700;' : '';
+                sumActC += monthsData.actC[i];
+                sumPfm += monthsData.pfm[i];
+
+                let highlightStyle = (monthKeys[i] === sMonth) ? 'font-weight:600; background-color:#fff7ed;' : '';
+                let textHighlight = (monthKeys[i] === sMonth) ? 'color:#ea580c; font-weight:700;' : '';
+                
                 tableRowsHtml += `
                     <tr style="${highlightStyle}">
                         <td>${monthLabels[i]}</td>
-                        <td>${formatNumberDisplay(monthsData.actC[i], 'actC')}</td>
-                        <td style="text-align:right; ${textHighlight}">${formatNumberDisplay(monthsData.pfm[i], 'Pfm')}</td>
+                        <td>${formatNumberDisplay(monthsData.actC[i], 'actC', true)}</td>
+                        <td style="text-align:right; ${textHighlight}">${formatNumberDisplay(monthsData.pfm[i], 'Pfm', true)}</td>
                     </tr>
                 `;
             }
+
+            let avgActC = sumActC / monthKeys.length;
+            let avgPfm = sumPfm / monthKeys.length;
+            
+            let highlightAvg = (sMonth === 'Avg') ? 'background-color:#fff7ed; font-weight:700;' : 'background-color:#f8fafc; font-weight:600;';
+            let textHighlightAvg = (sMonth === 'Avg') ? 'color:#ea580c;' : 'color:#1e3a8a;';
+
+            tableRowsHtml += `
+                <tr style="border-top: 2px solid #cbd5e1; ${highlightAvg}">
+                    <td>Trung bình tất cả các tháng</td>
+                    <td>${formatNumberDisplay(avgActC, 'actC', true)}</td>
+                    <td style="text-align:right; ${textHighlightAvg}">${formatNumberDisplay(avgPfm, 'Pfm', true)}</td>
+                </tr>
+            `;
 
             reportContainer.innerHTML = `
                 <div class="report-header">
                     <h3>Địa bàn: ${districtName} (${provinceName})</h3>
                     <div style="font-size: 12px; color:#64748b; margin-top:4px; line-height: 1.6;">
                         Miền (HQ): <b>${distRecords[0].hq || "N/A"}</b> | Khu vực (Area): <b>${distRecords[0].area || "N/A"}</b><br>
-                        Danh mục (CAT): <span style="color: #2563eb; font-weight: bold;">${sCat || "Tất cả Danh mục"}</span>
+                        Danh mục (CAT): <span style="color: #ea580c; font-weight: bold;">${sCat || "Tất cả Danh mục"}</span>
                     </div>
                 </div>
                 
@@ -1467,7 +1510,7 @@
                             type: 'line',
                             label: 'Sell out (VND)',
                             data: monthsData.pfm,
-                            borderColor: '#10b981',        
+                            borderColor: '#ea580c',  /* Đổi biểu đồ đường thành màu cam */      
                             backgroundColor: 'transparent',
                             yAxisID: 'yAxisVND',           
                             borderWidth: 3,
@@ -1499,7 +1542,7 @@
                         },
                         yAxisVND: {
                             type: 'linear', position: 'right',
-                            title: { display: true, text: 'Sell out (VND)', color: '#10b981', font: { size: 11, weight: 'bold' } },
+                            title: { display: true, text: 'Sell out (VND)', color: '#ea580c', font: { size: 11, weight: 'bold' } },
                             ticks: { callback: function(value) { return new Intl.NumberFormat('en-US').format(value); } },
                             grid: { drawOnChartArea: false } 
                         }
@@ -1532,7 +1575,8 @@
             const sArea = areaSelect.value;
             const sCat = catSelect.value;
             const sMonth = monthSelect.value;
-            const dataKey = 'Pfm' + sMonth; 
+            const sDataType = dataTypeSelect.value;
+            const dataKey = sDataType + sMonth; 
 
             const filteredRecords = myDatabase.filter(item => 
                 safeNormalizeString(item.prov) === safeNormalizeString(selectedProvince) &&
@@ -1548,7 +1592,7 @@
                 let topPerformingDistrict = "";
 
                 districts.forEach(dist => {
-                    let val = getDistrictValue(selectedProvince, dist, dataKey, sCat);
+                    let val = getDistrictValue(selectedProvince, dist, dataKey, sCat, sDataType);
                     if (val > maxRevenue) {
                         maxRevenue = val;
                         topPerformingDistrict = dist;
