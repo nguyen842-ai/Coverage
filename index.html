@@ -56,13 +56,13 @@
         .filter-row {
             display: flex;
             gap: 12px;
-            margin-bottom: 16px;
+            margin-bottom: 24px;
             flex-wrap: nowrap;
         }
 
         .filter-group {
             flex: 1;
-            min-width: 0; /* Ngăn drop-down bị vỡ khung chữ */
+            min-width: 0; 
         }
 
         .filter-group label {
@@ -97,24 +97,16 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
         }
 
-        .heat-config-panel {
-            background: #f0fdf4;
-            padding: 16px;
-            border-radius: 12px;
-            border: 1px solid #bbf7d0;
-            margin-top: 4px;
-            margin-bottom: 24px;
-        }
-
-        /* BỘ LỌC KIỂU DỮ LIỆU ĐƯỢC DỜI SANG CẠNH NÚT ZOOM MAP */
+        /* KHU VỰC CHỨA CÁC TOOL ĐIỀU KHIỂN TRÊN NỀN BẢN ĐỒ */
         .custom-map-filter-control {
             background: white;
-            padding: 5px 10px;
-            border-radius: 6px;
-            border: 2px solid rgba(0,0,0,0.2);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #cbd5e1;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             display: flex;
-            align-items: center;
-            gap: 6px;
+            flex-direction: column;
+            gap: 10px;
             position: absolute;
             left: 44px;
             top: 0px;
@@ -122,25 +114,33 @@
             white-space: nowrap;
             z-index: 1000;
         }
-        .custom-map-filter-control label {
+        .map-tool-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: space-between;
+        }
+        .map-tool-item label {
             font-size: 11px;
             font-weight: 700;
             color: #475569;
             text-transform: uppercase;
+            width: 75px;
         }
-        .custom-map-filter-control select {
-            padding: 4px 6px;
+        .map-tool-item select {
+            padding: 5px 8px;
             font-size: 12px;
             border: 1px solid #cbd5e1;
-            border-radius: 4px;
+            border-radius: 5px;
             outline: none;
             cursor: pointer;
             background: #f8fafc;
             font-weight: 600;
             color: #1e3a8a;
+            min-width: 175px;
         }
 
-        /* THƯỚC ĐO MÀU NHIỆT DỌC TRÊN BẢN ĐỒ */
+        /* THƯỚC ĐO MÀU NHIỆT DỌC ĐÃ ĐƯỢC ĐỔI TRỤC */
         .map-legend-vertical {
             background: #ffffff;
             padding: 12px;
@@ -152,7 +152,7 @@
             flex-direction: column;
             align-items: center;
             gap: 8px;
-            min-width: 95px;
+            min-width: 105px;
         }
         .legend-title-vertical {
             font-size: 11px;
@@ -170,13 +170,15 @@
             gap: 10px;
             height: 150px;
             width: 100%;
-            justify-content: center;
+            justify-content: flex-start;
+            align-items: stretch;
         }
         .legend-bar-vertical {
             width: 12px;
             height: 100%;
             border-radius: 6px;
             background: linear-gradient(to bottom, #1e3a8a, #1d4ed8, #2563eb, #60a5fa, #93c5fd);
+            flex-shrink: 0;
         }
         .legend-labels-vertical {
             display: flex;
@@ -185,21 +187,20 @@
             font-size: 10px;
             color: #64748b;
             font-weight: 600;
-            text-align: right;
-            max-width: 90px;
+            text-align: left;
             white-space: nowrap;
         }
 
-        /* NÚT CÔNG TẮC GẠT (TOGGLE SWITCH) BẬT/TẮT NHÃN */
+        /* CÔNG TẮC SWITCH HIỆN TÊN QUẬN HUYỆN */
         .toggle-wrapper {
             display: flex;
             align-items: center;
             justify-content: space-between;
             width: 100%;
-            margin-top: 6px;
+            margin-top: 4px;
             padding-top: 8px;
             border-top: 1px solid #f1f5f9;
-            gap: 8px;
+            gap: 6px;
         }
         .toggle-label {
             font-size: 11px;
@@ -246,7 +247,7 @@
             transform: translateX(14px);
         }
 
-        /* NHÃN QUẬN HUYỆN TRÊN MAP */
+        /* CSS CSS CHỮ NHÃN TRÊN BẢN ĐỒ */
         .map-district-label {
             background: transparent !important;
             border: none !important;
@@ -348,26 +349,6 @@
                 </div>
             </div>
 
-            <div class="heat-config-panel">
-                <div class="filter-group" style="margin-bottom: 0;">
-                    <label style="color:#166534;" for="monthSelect">Thời gian (Tháng)</label>
-                    <select id="monthSelect" style="background:#fff;">
-                        <option value="Jan">Tháng 1</option>
-                        <option value="Feb">Tháng 2</option>
-                        <option value="Mar">Tháng 3</option>
-                        <option value="Apr">Tháng 4</option>
-                        <option value="May">Tháng 5</option>
-                        <option value="Jun">Tháng 6</option>
-                        <option value="Jul">Tháng 7</option>
-                        <option value="Aug">Tháng 8</option>
-                        <option value="Sep">Tháng 9</option>
-                        <option value="Oct">Tháng 10</option>
-                        <option value="Nov">Tháng 11</option>
-                        <option value="Dec">Tháng 12</option>
-                    </select>
-                </div>
-            </div>
-
             <div id="loader">Đang khởi tạo dữ liệu bản đồ...</div>
             <div class="report-container" id="reportContainer">
                 <div class="no-data">Bấm vào một vùng bất kỳ trên bản đồ nhiệt hoặc chọn bộ lọc để xem số liệu chi tiết.</div>
@@ -378,7 +359,7 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
         // =========================================================
-        // [VÙNG TRỐNG THAY THẾ] DÁN TOÀN BỘ DATABASE CỦA BẠN VÀO ĐÂY
+        // [VÙNG TRỐNG] DÁN TOÀN BỘ DANH SÁCH DATABASE CỦA BẠN VÀO ĐÂY
         // =========================================================
         const myDatabase = [
             { hq: "1.South", area: "3. South Mekong", prov: "An Giang", dist: "An Phú", cat: "All Cat", actCJan: "27", actCFeb: "18", actCMar: "22", actCApr: "24", actCMay: "18", PfmJan: "266827651.851852", PfmFeb: "181131160.185185", PfmMar: "161810976.851852", PfmApr: "163888000", PfmMay: "36054777.7777778"},
@@ -1119,13 +1100,11 @@
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Bình", cat: "F&B", actCJan: "44", actCFeb: "44", actCMar: "47", actCApr: "62", actCMay: "", PfmJan: "445589629.62963", PfmFeb: "182071014.814815", PfmMar: "338259800", PfmApr: "321681600", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Tân Phú", cat: "F&B", actCJan: "82", actCFeb: "45", actCMar: "62", actCApr: "99", actCMay: "", PfmJan: "872725418.181818", PfmFeb: "353677500", PfmMar: "900809600", PfmApr: "787261703.703704", PfmMay: ""},
 { hq: "1.South", area: "1. HCMC", prov: "Hồ Chí Minh", dist: "Thủ Đức", cat: "F&B", actCJan: "0", actCFeb: "0", actCMar: "0", actCApr: "12", actCMay: "", PfmJan: "0", PfmFeb: "0", PfmMar: "0", PfmApr: "83731000", PfmMay: ""},
-
         ];
 
         const map = L.map('map', { attributionControl: false, zoomControl: true }).setView([16.047, 105.804], 6);
         map.zoomControl.setPosition('topleft');
 
-        // Khai báo quản lý 12 tháng hệ thống chuỗi đồng bộ
         const monthKeys = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
         const monthLabels = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6', 'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 
@@ -1134,23 +1113,42 @@
         let currentMapLayer = null; 
         let myChart = null; 
 
-        // Gắn Bộ lọc Xem bản đồ nhiệt lên góc Map (Cạnh Zoom Control)
+        // Gắn Hộp công cụ chứa "Xem theo" và "Thời gian" lên map (Ngang hàng cạnh Zoom Control)
         const filterControl = L.control({ position: 'topleft' });
         filterControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'custom-map-filter-control');
             L.DomEvent.disableClickPropagation(div);
             div.innerHTML = `
-                <label for="dataTypeSelect">Xem theo:</label>
-                <select id="dataTypeSelect">
-                    <option value="Pfm">Sell out</option>
-                    <option value="actC">Số lượng khách hàng lên đơn</option>
-                </select>
+                <div class="map-tool-item">
+                    <label for="dataTypeSelect">Xem theo:</label>
+                    <select id="dataTypeSelect">
+                        <option value="Pfm">Sell out</option>
+                        <option value="actC">Số lượng khách hàng lên đơn</option>
+                    </select>
+                </div>
+                <div class="map-tool-item">
+                    <label for="monthSelect">Thời gian:</label>
+                    <select id="monthSelect">
+                        <option value="Jan">Tháng 1</option>
+                        <option value="Feb">Tháng 2</option>
+                        <option value="Mar">Tháng 3</option>
+                        <option value="Apr">Tháng 4</option>
+                        <option value="May">Tháng 5</option>
+                        <option value="Jun">Tháng 6</option>
+                        <option value="Jul">Tháng 7</option>
+                        <option value="Aug">Tháng 8</option>
+                        <option value="Sep">Tháng 9</option>
+                        <option value="Oct">Tháng 10</option>
+                        <option value="Nov">Tháng 11</option>
+                        <option value="Dec">Tháng 12</option>
+                    </select>
+                </div>
             `;
             return div;
         };
         filterControl.addTo(map);
 
-        // Khởi tạo Thước đo nhiệt màu dọc kèm Switch On/Off Nhãn Địa danh
+        // Khởi tạo Thước đo dọc (Màu bên trái - Chữ bên phải) kèm Switch Hiện tên quận huyện
         const legendControl = L.control({ position: 'topleft' });
         legendControl.onAdd = function(map) {
             const div = L.DomUtil.create('div', 'map-legend-vertical');
@@ -1158,15 +1156,14 @@
             div.innerHTML = `
                 <div class="legend-title-vertical" id="legendTitleMap">Sell out</div>
                 <div class="legend-body-vertical">
+                    <div class="legend-bar-vertical"></div>
                     <div class="legend-labels-vertical">
                         <span id="legendMaxMap">Cao</span>
-                        <span>Trung bình</span>
                         <span id="legendMinMap">Thấp</span>
                     </div>
-                    <div class="legend-bar-vertical"></div>
                 </div>
                 <div class="toggle-wrapper">
-                    <label class="toggle-label" for="labelToggleInput">Hiện nhãn</label>
+                    <label class="toggle-label" for="labelToggleInput">Hiện tên quận huyện</label>
                     <label class="switch">
                         <input type="checkbox" id="labelToggleInput" ${showLabels ? 'checked' : ''}>
                         <span class="slider"></span>
@@ -1187,7 +1184,7 @@
         const PROP_PROVINCE = 'COUNTRY'; 
         const PROP_DISTRICT = 'NAME_1';  
 
-        // Khai báo lại DOM các Element sau khi map được dựng hoàn chỉnh
+        // Khai báo liên kết DOM sau khi Control Bản đồ được khởi tạo xong
         const hqSelect = document.getElementById('hqSelect');
         const areaSelect = document.getElementById('areaSelect');
         const provinceSelect = document.getElementById('provinceSelect');
@@ -1197,7 +1194,6 @@
         const reportContainer = document.getElementById('reportContainer');
         const loader = document.getElementById('loader');
 
-        // Bắt sự kiện thay đổi cho ô chọn vừa dời sang bản đồ
         dataTypeSelect.addEventListener('change', () => refreshDashboard(false));
 
         function safeNormalizeString(val) {
@@ -1214,7 +1210,11 @@
         function formatNumberDisplay(val, type) {
             let num = parseFloat(val) || 0;
             if (type === 'Pfm') {
-                return new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 }).format(num) + " VND";
+                if (num === 2700000000) return "2.7 BVND";
+                if (num === 900000) return "0.9 MVND";
+                if (num >= 1000000000) return (num / 1000000000).toFixed(1) + " BVND";
+                if (num >= 100000) return (num / 1000000).toFixed(1) + " MVND";
+                return new Intl.NumberFormat('en-US').format(num) + " VND";
             }
             return new Intl.NumberFormat('en-US').format(num);
         }
@@ -1337,7 +1337,6 @@
                 maxVal = valuesArray.length ? Math.max(...valuesArray) : 100;
             }
 
-            // Đồng bộ tên nhãn tiêu đề động trên thước đo nhiệt
             document.getElementById('legendTitleMap').innerText = sDataType === 'Pfm' ? 'Sell out' : 'Số lượng KH';
             document.getElementById('legendMinMap').innerText = minVal > 0 ? formatNumberDisplay(minVal, sDataType) : "Thấp";
             document.getElementById('legendMaxMap').innerText = maxVal > 0 ? formatNumberDisplay(maxVal, sDataType) : "Cao";
@@ -1421,13 +1420,11 @@
                 }
             }
 
-            // Tự động giải nén cấu trúc mảng dữ liệu cho 12 tháng đầy đủ
             const monthsData = {
                 actC: monthKeys.map(m => extractMonthVal('actC' + m)),
                 pfm: monthKeys.map(m => extractMonthVal('Pfm' + m))
             };
 
-            // Tạo các dòng dữ liệu bảng 12 tháng, làm nổi bật hàng tương ứng tháng đang chọn lọc
             let tableRowsHtml = '';
             for (let i = 0; i < 12; i++) {
                 let highlightStyle = (monthKeys[i] === sMonth) ? 'font-weight:600; background-color:#f0fdf4;' : '';
@@ -1586,7 +1583,6 @@
         catSelect.addEventListener('change', function() { refreshDashboard(false); });
         monthSelect.addEventListener('change', () => {
             refreshDashboard(false);
-            // Nếu đang xem chi tiết một huyện, cập nhật lại bảng báo cáo để highlight hàng tháng mới chọn
             const headerActive = reportContainer.querySelector('.report-header h3');
             if (headerActive) {
                 const match = headerActive.innerText.match(/Địa bàn:\s*(.*?)\s*\((.*?)\)/);
