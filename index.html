@@ -3,11 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Bản Đồ</title>
+    <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Plugin để đọc file KML -->
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+    <!-- Plugin đọc Excel (SheetJS) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Thư viện Xuất Hình Ảnh (html2canvas) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
         body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; }
@@ -19,19 +25,36 @@
             background: rgba(255, 255, 255, 0.95);
             padding: 20px; border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            width: 280px; border: 1px solid #e2e8f0;
+            width: 300px; border: 1px solid #e2e8f0;
             backdrop-filter: blur(5px);
+            max-height: 90vh; overflow-y: auto;
         }
         .toolbox h2 { font-size: 16px; color: #1e3a8a; margin: 0 0 16px 0; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #e2e8f0; padding-bottom: 8px;}
         
         .tool-group { margin-bottom: 16px; }
         .tool-group label { display: block; font-size: 12px; font-weight: 600; color: #475569; margin-bottom: 6px; }
-        .tool-group select, .tool-group input[type="color"] {
+        .tool-group select, .tool-group input[type="color"], .tool-group input[type="file"] {
             width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;
-            font-size: 13px; outline: none; cursor: pointer; background: white;
+            font-size: 12px; outline: none; cursor: pointer; background: white; box-sizing: border-box;
         }
         
         #borderColorPickerGroup { margin-top: 10px; }
+
+        /* Nút Upload Excel */
+        .excel-upload-wrapper {
+            background: #f1f5f9; border: 1px dashed #94a3b8; padding: 12px; border-radius: 8px; text-align: center;
+        }
+        .excel-upload-wrapper label { cursor: pointer; margin: 0; color: #2563eb; font-weight: bold; }
+        .excel-upload-wrapper input[type="file"] { display: none; }
+        .excel-note { font-size: 10px; color: #64748b; margin-top: 6px; line-height: 1.4; }
+
+        /* Nút Xuất Ảnh */
+        .export-btn {
+            width: 100%; padding: 10px; background: #10b981; color: white; border: none; 
+            border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px;
+            transition: background 0.2s; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+        .export-btn:hover { background: #059669; }
 
         /* Công tắc (Switch) */
         .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -54,8 +77,6 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 26px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.4));
         }
-
-        /* Nút xóa trong popup */
         .delete-btn {
             background: #ef4444; color: white; border: none; padding: 6px 10px; 
             border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%; font-weight: bold;
@@ -67,7 +88,7 @@
         .map-label {
             background: transparent !important; border: none !important; box-shadow: none !important;
             font-size: 11px !important; font-weight: bold !important; color: #1e293b !important;
-            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0px 0px 4px #fff;
+            text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
             pointer-events: none;
             white-space: nowrap;
         }
@@ -91,7 +112,7 @@
         </div>
 
         <div class="tool-group">
-            <label>Công cụ tương tác</label>
+            <label>Công cụ tương tác (Thủ công)</label>
             <select id="actionSelect">
                 <option value="color">🖌️ Tô màu vùng & Ranh giới</option>
                 <option value="kc">📍 Ghim Key Customer</option>
@@ -107,6 +128,29 @@
         <div class="tool-group" id="borderColorPickerGroup">
             <label>Chọn màu (Đường ranh giới)</label>
             <input type="color" id="borderColorInput" value="#64748b">
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+        <!-- AUTO EXCEL UPLOAD TOOL -->
+        <div class="tool-group">
+            <label>Tô màu Tự Động bằng Excel</label>
+            <div class="excel-upload-wrapper">
+                <label for="excelFile">Tải lên file Excel (.xlsx)</label>
+                <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
+                <div class="excel-note">
+                    Cột C: Tỉnh/TP | Cột D: Loại<br>
+                    (Distributor -> #002561 | Key customer -> #ea7f1a)
+                </div>
+            </div>
+        </div>
+
+        <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
+
+        <!-- HIGH-RES IMAGE EXPORT TOOL -->
+        <div class="tool-group">
+            <label>Xuất bản đồ thành hình ảnh</label>
+            <button class="export-btn" id="exportBtn">📸 Xuất ảnh siêu nét (3x HD)</button>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -135,6 +179,8 @@
         const borderColorInput = document.getElementById('borderColorInput');
         const toggleLabelProv = document.getElementById('toggleLabelProv');
         const toggleLabelDist = document.getElementById('toggleLabelDist');
+        const excelFile = document.getElementById('excelFile');
+        const exportBtn = document.getElementById('exportBtn');
         const loader = document.getElementById('loader');
 
         let currentGeoLayer = null;
@@ -155,42 +201,36 @@
             borderColorPickerGroup.style.display = display;
         });
 
-        // HÀM EXTRACT NHÃN THEO YÊU CẦU CỦA BẠN (TỈNH: VARNAME_1 + GID_0 | HUYỆN: VARNAME_2 + NAME_1)
+        // ----------------------------------------------------
+        // LOGIC LẤY TÊN VÙNG & XỬ LÝ OFFSET CHO CÁC TỈNH CÓ ĐẢO
+        // ----------------------------------------------------
         function extractRegionName(feature, level) {
             const props = feature.properties;
             if (!props) return "";
-
+            
             let name = "";
             if (level === 'prov') {
-                let varName1 = props.VARNAME_1 || "";
-                let gid0 = props.GID_0 || "";
-
-                if (varName1 === "NA" || varName1 === "null") varName1 = "";
-                if (gid0 === "NA" || gid0 === "null") gid0 = "";
-
-                if (varName1 && gid0) {
-                    name = varName1 + " - " + gid0;
-                } else {
-                    name = varName1 || gid0 || "";
-                }
+                name = props.NAME_1 || props.name || props.Name || "";
             } else {
-                let varName2 = props.VARNAME_2 || "";
-                let name1 = props.NAME_1 || "";
-
-                if (varName2 === "NA" || varName2 === "null") varName2 = "";
-                if (name1 === "NA" || name1 === "null") name1 = "";
-
-                if (varName2 && name1) {
-                    name = varName2 + " - " + name1;
-                } else {
-                    name = varName2 || name1 || "";
-                }
+                name = props.NAME_2 || props.name || props.Name || "";
             }
 
-            if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") {
-                return "";
-            }
+            if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") return "";
             return name.trim();
+        }
+
+        // ----------------------------------------------------
+        // CHUẨN HÓA TÊN (PHỤC VỤ EXCEL MAPPING THÔNG MINH)
+        // ----------------------------------------------------
+        function normalizeName(str) {
+            if (!str) return "";
+            let n = str.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").trim();
+            n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "").replace(/\./g, "").trim();
+            
+            if (n === "hcm" || n === "hcmc" || n === "ho chi minh") {
+                return "ho chi minh";
+            }
+            return n;
         }
 
         function applyFeatureStyle(layer, isSelectedForColoring = false) {
@@ -198,7 +238,7 @@
                 color: currentBorderColor, 
                 weight: 1.5, 
                 fillColor: isSelectedForColoring ? currentFillColor : (layer.options.fillColor || "#f1f5f9"),
-                fillOpacity: isSelectedForColoring ? 0.8 : (layer.options.fillOpacity || 0.5)
+                fillOpacity: (isSelectedForColoring || layer.options.fillColor) ? 0.8 : 0.5
             });
         }
 
@@ -210,6 +250,7 @@
                 const action = actionSelect.value;
                 if (action === 'color') {
                     applyFeatureStyle(layer, true);
+                    layer.options.fillColor = currentFillColor; 
                 } else if (action === 'kc') {
                     let kcValue = prompt("Nhập số liệu cho Key Customer:", "10");
                     if (kcValue !== null && kcValue.trim() !== "") {
@@ -228,9 +269,7 @@
         function updateMapBorderColors() {
             if (currentGeoLayer) {
                 currentGeoLayer.eachLayer(function(layer) {
-                    if (layer.feature) {
-                        layer.setStyle({ color: currentBorderColor });
-                    }
+                    if (layer.feature) layer.setStyle({ color: currentBorderColor });
                 });
             }
         }
@@ -241,10 +280,23 @@
             
             layer.unbindTooltip();
 
-            if (level === 'prov' && toggleLabelProv.checked && regionName) {
-                layer.bindTooltip(regionName, { permanent: true, direction: 'center', className: 'map-label' });
-            } else if (level === 'dist' && toggleLabelDist.checked && regionName) {
-                layer.bindTooltip(regionName, { permanent: true, direction: 'center', className: 'map-label' });
+            if ((level === 'prov' && toggleLabelProv.checked) || (level === 'dist' && toggleLabelDist.checked)) {
+                if (regionName) {
+                    let offset = [0, 0];
+                    if (level === 'prov') {
+                        let checkName = regionName.toLowerCase();
+                        if (checkName.includes("kiên giang")) offset = [40, -30];   
+                        else if (checkName.includes("hải phòng")) offset = [-35, -15]; 
+                        else if (checkName.includes("quảng ninh")) offset = [-20, -5]; 
+                    }
+
+                    layer.bindTooltip(regionName, { 
+                        permanent: true, 
+                        direction: 'center', 
+                        className: 'map-label',
+                        offset: offset
+                    });
+                }
             }
         }
 
@@ -280,9 +332,7 @@
                 fetch('gadm41_VNM_2.json')
                     .then(res => res.json())
                     .then(data => {
-                        currentGeoLayer = L.geoJSON(data, {
-                            onEachFeature: setupFeature
-                        }).addTo(map);
+                        currentGeoLayer = L.geoJSON(data, { onEachFeature: setupFeature }).addTo(map);
                         loader.style.display = 'none';
                         updateMapBorderColors();
                         refreshLabels();
@@ -294,11 +344,94 @@
             }
         }
 
+        // --- ĐỌC FILE EXCEL ---
+        excelFile.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            loader.style.display = 'block';
+            loader.innerText = 'Đang xử lý file Excel...';
+
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1}); 
+
+                let colorMapping = {}; 
+
+                for (let i = 1; i < rows.length; i++) {
+                    let provCell = rows[i][2]; 
+                    let typeCell = rows[i][3]; 
+
+                    if (provCell && typeCell) {
+                        let normalizedProv = normalizeName(provCell);
+                        let typeStr = typeCell.toString().toLowerCase().trim();
+                        
+                        if (typeStr.includes("distributor")) {
+                            colorMapping[normalizedProv] = "#002561"; 
+                        } else if (typeStr.includes("key customer")) {
+                            colorMapping[normalizedProv] = "#ea7f1a"; 
+                        }
+                    }
+                }
+
+                if (currentGeoLayer) {
+                    let matchCount = 0;
+                    currentGeoLayer.eachLayer(function(layer) {
+                        if (layer.feature) {
+                            let mapProvName = layer.feature.properties.NAME_1 || layer.feature.properties.name || "";
+                            let normalizedMapProv = normalizeName(mapProvName);
+
+                            if (colorMapping[normalizedMapProv]) {
+                                layer.options.fillColor = colorMapping[normalizedMapProv];
+                                layer.setStyle({
+                                    fillColor: layer.options.fillColor,
+                                    fillOpacity: 0.8
+                                });
+                                matchCount++;
+                            }
+                        }
+                    });
+                    alert(`Đã hoàn tất tô màu tự động! Khớp thành công ${matchCount} vùng.`);
+                }
+                loader.style.display = 'none';
+                excelFile.value = ""; 
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        // --- XUẤT HÌNH ẢNH SIÊU NÉT (3X RESOLUTION) ---
+        exportBtn.addEventListener('click', function() {
+            loader.style.display = 'block';
+            loader.innerText = 'Đang render và xuất hình ảnh siêu nét (3x HD)... Vui lòng đợi trong giây lát.';
+
+            // Nhắm mục tiêu container bản đồ (Bảng công cụ .toolbox nằm ngoài container này nên không bị dính vào ảnh)
+            const mapContainer = document.getElementById('map');
+
+            html2canvas(mapContainer, {
+                useCORS: true,
+                scale: 3, // Tăng mật độ pixel lên gấp 3 lần độ phân giải màn hình thông thường
+                logging: false,
+                backgroundColor: '#ffffff'
+            }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = 'ban_do_xuat_ban_' + Date.now() + '.png';
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                
+                loader.style.display = 'none';
+            }).catch(err => {
+                alert('Có lỗi xảy ra khi render ảnh: ' + err);
+                loader.style.display = 'none';
+            });
+        });
+
+        // Xóa ghim
         window.deleteMarker = function(markerId) {
             markersLayer.eachLayer(layer => {
-                if (layer.options.customId === markerId) {
-                    markersLayer.removeLayer(layer);
-                }
+                if (layer.options.customId === markerId) markersLayer.removeLayer(layer);
             });
         };
 
@@ -307,20 +440,16 @@
             let icon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="kc-pin" style="width: 24px; height: 24px;">${value}</div>`,
-                iconSize: [28, 28],
-                iconAnchor: [14, 14]
+                iconSize: [28, 28], iconAnchor: [14, 14]
             });
-
             let marker = L.marker(latlng, { icon: icon, customId: uniqueId }).addTo(markersLayer);
-            
-            let popupHtml = `
+            marker.bindPopup(`
                 <div style="text-align: center; min-width: 120px;">
                     <b style="color: #0047ab; font-size: 13px;">Key Customer (${value})</b><br>
                     <span style="color: #475569; font-size: 12px;">${note || ''}</span>
                     <button class="delete-btn" onclick="deleteMarker(${uniqueId})">🗑️ Xóa ghim này</button>
                 </div>
-            `;
-            marker.bindPopup(popupHtml);
+            `);
         }
 
         function addNPPPin(latlng, note) {
@@ -328,20 +457,16 @@
             let icon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="npp-pin">⭐</div>`,
-                iconSize: [30, 30],
-                iconAnchor: [15, 15]
+                iconSize: [30, 30], iconAnchor: [15, 15]
             });
-
             let marker = L.marker(latlng, { icon: icon, customId: uniqueId }).addTo(markersLayer);
-            
-            let popupHtml = `
+            marker.bindPopup(`
                 <div style="text-align: center; min-width: 120px;">
                     <b style="color: #ea580c; font-size: 13px;">Nhà Phân Phối</b><br>
                     <span style="color: #475569; font-size: 12px;">${note || ''}</span>
                     <button class="delete-btn" onclick="deleteMarker(${uniqueId})">🗑️ Xóa ghim này</button>
                 </div>
-            `;
-            marker.bindPopup(popupHtml);
+            `);
         }
 
         map.on('click', function(e) {
