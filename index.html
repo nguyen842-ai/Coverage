@@ -5,10 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Plugin để đọc file KML -->
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+    <!-- Plugin đọc Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Thư viện Xuất Hình Ảnh (html2canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -105,24 +109,6 @@
             white-space: nowrap;
         }
 
-        /* Khi xuất ảnh: Ghim tự động theo tỷ lệ */
-        .exporting .map-label { 
-            text-shadow: -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff, 0px 0px 12px #fff !important;
-        }
-        .exporting .custom-div-icon {
-            width: 64px !important;
-            height: 64px !important;
-            margin-left: -32px !important;
-            margin-top: -32px !important;
-        }
-        .exporting .kc-pin { 
-            font-size: 26px !important; 
-            border-width: 5px !important;
-        }
-        .exporting .npp-pin { 
-            font-size: 60px !important; 
-        }
-
         #loader { display: none; font-size: 12px; color: #ea580c; font-weight: bold; margin-top: 10px; text-align: center; }
     </style>
 </head>
@@ -162,6 +148,7 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
+        <!-- AUTO EXCEL UPLOAD TOOL -->
         <div class="tool-group">
             <label>Tô màu Tự Động bằng Excel</label>
             <div class="excel-upload-wrapper">
@@ -173,18 +160,21 @@
                 </div>
             </div>
             
+            <!-- NÚT HỖ TRỢ XUẤT TÊN CHUẨN -->
             <button class="export-btn blue" id="downloadNamesBtn" title="Tải file Excel chứa danh sách các tên vùng khớp 100% với bản đồ">
                 📥 Tải File Tên Chuẩn (Excel)
             </button>
 
+            <!-- KHUNG BÁO CÁO LỖI KHÔNG KHỚP DỮ LIỆU -->
             <div id="unmatchedReport" class="unmatched-report"></div>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
+        <!-- HIGH-RES IMAGE EXPORT TOOL -->
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
-            <button class="export-btn green" id="exportBtn">📸 Xuất ảnh </button>
+            <button class="export-btn green" id="exportBtn">📸 Xuất ảnh Siêu Nét (5x Ultra-HD)</button>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -258,7 +248,7 @@
 
         function getMatchKey(str) {
             if (!str) return "";
-            let n = str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+            let n = str.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
             n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "");
             if (n.includes("ho chi minh") || n.includes("hcm")) n = "hochiminh";
             if (n.includes("ba ria") && n.includes("vung tau")) n = "bariavungtau";
@@ -398,7 +388,6 @@
                         }
                     });
 
-                    // Thêm danh sách các Tỉnh lên đầu
                     let provList = Array.from(provSet).sort().map(prov => ({
                         "Phân Loại": "Tỉnh / Thành Phố",
                         "Tỉnh Trực Thuộc": "",
@@ -407,12 +396,8 @@
 
                     let finalData = provList.concat(mapDataList);
 
-                    // Tạo file Excel
                     const ws = XLSX.utils.json_to_sheet(finalData);
-                    
-                    // Điều chỉnh độ rộng cột cho đẹp
                     ws['!cols'] = [{ wch: 20 }, { wch: 25 }, { wch: 35 }];
-
                     const wb = XLSX.utils.book_new();
                     XLSX.utils.book_append_sheet(wb, ws, "Tên Chuẩn Bản Đồ");
                     
@@ -527,7 +512,9 @@
                         unmatchedReport.style.display = "block";
                     }
 
-                    alert(`Đã hoàn tất tô màu tự động!\n- Khớp thành công: ${matchCount} vùng\n- Không khớp được: ${unmatchedCount} mục.`);
+                    alert(`Đã hoàn tất tô màu tự động!
+- Khớp thành công: ${matchCount} vùng
+- Không khớp được: ${unmatchedCount} mục.`);
                 }
                 loader.style.display = 'none';
                 excelFile.value = ""; 
@@ -535,18 +522,17 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // --- XUẤT HÌNH ẢNH SIÊU NÉT ---
+        // --- XUẤT HÌNH ẢNH SIÊU NÉT (ĐÃ BỎ ZOOM CHỮ LÀM VỠ LAYOUT) ---
         exportBtn.addEventListener('click', function() {
             loader.style.display = 'block';
-            loader.innerText = 'Đang tối ưu hóa kích thước chữ/ghim và kết xuất hình ảnh 5x Ultra-HD...';
+            loader.innerText = 'Đang kết xuất hình ảnh 5x Ultra-HD...';
 
             const mapContainer = document.getElementById('map');
-            document.body.classList.add('exporting');
 
             setTimeout(() => {
                 html2canvas(mapContainer, {
                     useCORS: true,
-                    scale: 7, 
+                    scale: 5, 
                     logging: false,
                     backgroundColor: '#ffffff'
                 }).then(canvas => {
@@ -555,11 +541,9 @@
                     link.href = canvas.toDataURL('image/png');
                     link.click();
                     
-                    document.body.classList.remove('exporting');
                     loader.style.display = 'none';
                 }).catch(err => {
                     alert('Có lỗi xảy ra khi kết xuất ảnh: ' + err);
-                    document.body.classList.remove('exporting');
                     loader.style.display = 'none';
                 });
             }, 300);
