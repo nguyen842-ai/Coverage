@@ -144,17 +144,17 @@
 
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
-            <button class="export-btn" id="exportBtn">📸 Xuất ảnh siêu nét (3x HD)</button>
+            <button class="export-btn" id="exportBtn">📸 Xuất ảnh</button>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
         <div class="toggle-row">
-            <span>Hiện nhãn Tỉnh/TP (GID_0)</span>
+            <span>Hiện nhãn Tỉnh/TP</span>
             <label class="switch"><input type="checkbox" id="toggleLabelProv"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
-            <span>Hiện nhãn Quận/Huyện (NAME_1)</span>
+            <span>Hiện nhãn Quận/Huyện</span>
             <label class="switch"><input type="checkbox" id="toggleLabelDist"><span class="slider"></span></label>
         </div>
         
@@ -249,11 +249,11 @@
                 } else if (action === 'kc') {
                     let kcValue = prompt("Nhập số liệu cho Key Customer:", "10");
                     if (kcValue !== null && kcValue.trim() !== "") {
-                        let note = prompt("Nhập ghi chú cho Key Customer này:", "Khách hàng VIP");
+                        let note = prompt("Nhập ghi chú cho Key Customer này:", "Khách hàng Key");
                         addKCPin(e.latlng, kcValue, note);
                     }
                 } else if (action === 'npp') {
-                    let note = prompt("Tên/Ghi chú cho Distributor (NPP):", "NPP Độc Quyền");
+                    let note = prompt("Tên/Ghi chú cho Distributor (NPP):", "NPP");
                     if (note !== null) {
                         addNPPPin(e.latlng, note);
                     }
@@ -364,7 +364,7 @@
                         let normalizedProv = normalizeName(provCell);
                         let typeStr = typeCell.toString().toLowerCase().trim();
                         
-                        if (typeStr.includes("distributor")) {
+                        if (typeStr.includes("Distributor")) {
                             colorMapping[normalizedProv] = "#002561"; 
                         } else if (typeStr.includes("key customer")) {
                             colorMapping[normalizedProv] = "#ea7f1a"; 
