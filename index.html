@@ -111,6 +111,15 @@
         }
 
         #loader { display: none; font-size: 12px; color: #ea580c; font-weight: bold; margin-top: 10px; text-align: center; }
+        
+        /* Debug log */
+        #debugLog { 
+            display: none; font-size: 10px; color: #64748b; 
+            background: #f1f5f9; padding: 8px; border-radius: 6px; 
+            margin-top: 10px; max-height: 120px; overflow-y: auto; 
+            font-family: monospace; line-height: 1.3;
+            border: 1px solid #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -156,9 +165,10 @@
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
                 <div class="excel-note">
                     Cột C: Tỉnh/TP/Huyện | Cột D: Loại<br>
-                    (Distributor -> #002561 | Key customer -> #ea7f1a)
+                    (Distributor → Xanh | Key customer → Cam)
                 </div>
             </div>
+            <div id="debugLog"></div>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -203,6 +213,7 @@
         const excelFile = document.getElementById('excelFile');
         const exportBtn = document.getElementById('exportBtn');
         const loader = document.getElementById('loader');
+        const debugLog = document.getElementById('debugLog');
 
         let currentGeoLayer = null;
         let markersLayer = L.layerGroup().addTo(map); 
@@ -238,20 +249,25 @@
             return name.trim();
         }
 
-        // BỘ LỌC CHỮ SIÊU MẠNH: Xóa hết khoảng trắng, gạch nối, ép về chữ thường không dấu
+        // ✅ CẢI TIẾN: Bộ lọc ký tự siêu mạnh - loại bỏ TẤT CẢ ký tự không phải chữ số
         function getMatchKey(str) {
             if (!str) return "";
-            let n = str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
             
-            // Xóa tiền tố
-            n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "");
+            // Bước 1: Chuyển thành chữ thường
+            let n = str.toString().toLowerCase();
             
-            // Đồng bộ tên gọi đặc biệt
+            // Bước 2: Loại bỏ dấu tiếng Việt (ă, ê, ô, đ, etc.)
+            n = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
+            
+            // Bước 3: Loại bỏ tiền tố (tỉnh, thành phố, tp, ...)
+            n = n.replace(/^tinh\s+/, "").replace(/^thanh\s*pho\s+/, "").replace(/^tp\s+/, "");
+            
+            // Bước 4: Xử lý tên gọi đặc biệt
             if (n.includes("ho chi minh") || n.includes("hcm")) n = "hochiminh";
             if (n.includes("ba ria") && n.includes("vung tau")) n = "bariavungtau";
-            if (n.includes("thua thien hue")) n = "thuathienhue";
+            if (n.includes("thua thien") && n.includes("hue")) n = "thuathienhue";
             
-            // Ép dính liền mọi ký tự (xóa khoảng trắng, dấu phẩy, gạch ngang...)
+            // Bước 5: Xóa TẤT CẢ ký tự không phải chữ a-z hay số 0-9
             return n.replace(/[^a-z0-9]/g, "");
         }
 
@@ -366,65 +382,98 @@
             }
         }
 
-        // --- ĐỌC FILE EXCEL KHỚP DỮ LIỆU ---
+        // ✅ CẢI TIẾN: Đọc Excel đúng cách + Debug log
         excelFile.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             loader.style.display = 'block';
             loader.innerText = 'Đang xử lý file Excel...';
+            debugLog.style.display = 'block';
+            debugLog.innerHTML = '';
 
             const reader = new FileReader();
             reader.onload = function(evt) {
-                const data = new Uint8Array(evt.target.result);
-                const workbook = XLSX.read(data, {type: 'array'});
-                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                
-                const rows = XLSX.utils.sheet_to_json(firstSheet, {header: "A"}); 
-
-                let colorMapping = {}; 
-
-                for (let i = 0; i < rows.length; i++) {
-                    let provCell = rows[i]["C"]; // Cột C tuyệt đối
-                    let typeCell = rows[i]["D"]; // Cột D tuyệt đối
-
-                    if (provCell && typeCell) {
-                        let matchKey = getMatchKey(provCell);
-                        
-                        let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
-                        
-                        if (typeStr.includes("distributor") || typeStr.includes("npp") || typeStr.includes("nhaphanphoi")) {
-                            colorMapping[matchKey] = "#002561"; 
-                        } 
-                        else if (typeStr.includes("keycustomer") || typeStr.includes("kc") || typeStr.includes("khachhang")) {
-                            colorMapping[matchKey] = "#ea7f1a"; 
-                        }
-                    }
-                }
-
-                if (currentGeoLayer) {
-                    let matchCount = 0;
-                    const level = layerSelect.value;
+                try {
+                    const data = new Uint8Array(evt.target.result);
+                    const workbook = XLSX.read(data, {type: 'array'});
+                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                     
-                    currentGeoLayer.eachLayer(function(layer) {
-                        if (layer.feature) {
-                            let mapTargetName = extractRegionName(layer.feature, level);
-                            let mapMatchKey = getMatchKey(mapTargetName);
+                    // ✅ Cải tiến: Đọc từ dòng 2 (bỏ qua tiêu đề)
+                    const allRows = XLSX.utils.sheet_to_json(firstSheet, {header: "A", defval: ""});
+                    
+                    let colorMapping = {}; 
+                    let matchedRegions = [];
+                    let unmatchedRegions = [];
 
-                            if (colorMapping[mapMatchKey]) {
-                                layer.options.fillColor = colorMapping[mapMatchKey];
-                                layer.setStyle({
-                                    fillColor: layer.options.fillColor,
-                                    fillOpacity: 0.8
-                                });
-                                matchCount++;
+                    console.log('📊 Excel có', allRows.length, 'dòng');
+                    debugLog.innerHTML += `📊 Excel có ${allRows.length} dòng dữ liệu<br>`;
+
+                    for (let i = 0; i < allRows.length; i++) {
+                        let provCell = allRows[i]["C"] || "";
+                        let typeCell = allRows[i]["D"] || "";
+
+                        if (provCell && typeCell) {
+                            let matchKey = getMatchKey(provCell);
+                            let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
+                            
+                            let color = "";
+                            if (typeStr.includes("distributor") || typeStr.includes("npp") || typeStr.includes("nhaphanphoi")) {
+                                color = "#002561"; // Xanh
+                                unmatchedRegions.push(`${provCell} → Distributor (${matchKey})`);
+                            } 
+                            else if (typeStr.includes("keycustomer") || typeStr.includes("kc") || typeStr.includes("khachhang")) {
+                                color = "#ea7f1a"; // Cam
+                                unmatchedRegions.push(`${provCell} → Key Customer (${matchKey})`);
+                            }
+                            
+                            if (color) {
+                                colorMapping[matchKey] = color;
                             }
                         }
-                    });
-                    alert(`Đã hoàn tất tô màu tự động! Khớp thành công ${matchCount} vùng.`);
+                    }
+
+                    if (currentGeoLayer) {
+                        let matchCount = 0;
+                        const level = layerSelect.value;
+                        
+                        currentGeoLayer.eachLayer(function(layer) {
+                            if (layer.feature) {
+                                let mapTargetName = extractRegionName(layer.feature, level);
+                                let mapMatchKey = getMatchKey(mapTargetName);
+
+                                if (colorMapping[mapMatchKey]) {
+                                    layer.options.fillColor = colorMapping[mapMatchKey];
+                                    layer.setStyle({
+                                        fillColor: layer.options.fillColor,
+                                        fillOpacity: 0.8
+                                    });
+                                    matchedRegions.push(mapTargetName);
+                                    matchCount++;
+                                }
+                            }
+                        });
+                        
+                        debugLog.innerHTML += `<br>✅ Khớp thành công: <strong>${matchCount}</strong> vùng<br>`;
+                        if (matchedRegions.length > 0) {
+                            debugLog.innerHTML += `<br><strong>Vùng đã tô:</strong><br>`;
+                            matchedRegions.slice(0, 5).forEach(r => {
+                                debugLog.innerHTML += `✓ ${r}<br>`;
+                            });
+                            if (matchedRegions.length > 5) {
+                                debugLog.innerHTML += `... và ${matchedRegions.length - 5} vùng khác<br>`;
+                            }
+                        }
+                        
+                        alert(`✅ Đã tô màu tự động thành công! Khớp ${matchCount} vùng.\n\nXem chi tiết trong ô Debug phía dưới.`);
+                    }
+                    loader.style.display = 'none';
+                    excelFile.value = "";
+                } catch (err) {
+                    debugLog.innerHTML += `<span style="color: #dc2626;">❌ Lỗi: ${err.message}</span>`;
+                    alert('❌ Lỗi khi xử lý file Excel:\n' + err.message);
+                    loader.style.display = 'none';
                 }
-                loader.style.display = 'none';
-                excelFile.value = ""; 
             };
             reader.readAsArrayBuffer(file);
         });
