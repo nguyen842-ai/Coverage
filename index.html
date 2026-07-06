@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Bản Đồ</title>
+    <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
     <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -19,7 +19,7 @@
         body, html { margin: 0; padding: 0; height: 100%; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f8fafc; }
         #map { width: 100%; height: 100%; background-color: #ffffff !important; }
 
-        /* Bảng công cụ nổi*/
+        /* Bảng công cụ nổi */
         .toolbox {
             position: absolute; top: 20px; right: 20px; z-index: 1000;
             background: rgba(255, 255, 255, 0.95);
@@ -171,7 +171,7 @@
         <!-- HIGH-RES IMAGE EXPORT TOOL -->
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
-            <button class="export-btn" id="exportBtn">📸 Xuất ảnh</button>
+            <button class="export-btn" id="exportBtn">📸 Xuất ảnh Siêu Nét (5x Ultra-HD)</button>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -192,7 +192,7 @@
         const map = L.map('map', { 
             zoomControl: false, 
             preferCanvas: true,
-            zoomSnap: 0.15,  
+            zoomSnap: 0.25,  
             zoomDelta: 0.25  
         }).setView([16.047, 105.804], 6);
         
@@ -275,11 +275,11 @@
                 } else if (action === 'kc') {
                     let kcValue = prompt("Nhập số liệu cho Key Customer:", "10");
                     if (kcValue !== null && kcValue.trim() !== "") {
-                        let note = prompt("Nhập ghi chú cho Key Customer này:", "Khách hàng Key");
+                        let note = prompt("Nhập ghi chú cho Key Customer này:", "Khách hàng VIP");
                         addKCPin(e.latlng, kcValue, note);
                     }
                 } else if (action === 'npp') {
-                    let note = prompt("Tên/Ghi chú cho Distributor (NPP):", "NPP");
+                    let note = prompt("Tên/Ghi chú cho Distributor (NPP):", "NPP Độc Quyền");
                     if (note !== null) {
                         addNPPPin(e.latlng, note);
                     }
@@ -306,9 +306,9 @@
                     let offset = [0, 0];
                     if (level === 'prov') {
                         let checkName = regionName.toLowerCase();
-                        if (checkName.includes("Kiên Giang")) offset = [40, -30];   
-                        else if (checkName.includes("Hải Phòng")) offset = [-35, -15]; 
-                        else if (checkName.includes("Quảng Ninh")) offset = [-20, -5]; 
+                        if (checkName.includes("kien giang")) offset = [40, -30];   
+                        else if (checkName.includes("hai phong")) offset = [-35, -15]; 
+                        else if (checkName.includes("quang ninh")) offset = [-20, -5]; 
                     }
 
                     layer.bindTooltip(regionName, { 
@@ -396,12 +396,12 @@
                         // Loại bỏ hoàn toàn khoảng trắng, gạch nối, dấu chấm để so khớp chính xác 100%
                         let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
                         
-                        // "Distributor", "npp", "nhaphanphoi"
-                        if (typeStr.includes("Distributor") || typeStr.includes("npp") || typeStr.includes("NPP")) {
+                        // "distributor", "npp", "nhaphanphoi"
+                        if (typeStr.includes("distributor") || typeStr.includes("npp") || typeStr.includes("nhaphanphoi")) {
                             colorMapping[normalizedProv] = "#002561"; 
                         } 
-                        // "Keycustomer", "Key", "khachhang"
-                        else if (typeStr.includes("Keycustomer") || typeStr.includes("Key") || typeStr.includes("keycustomer")) {
+                        // "keycustomer", "kc", "khachhang"
+                        else if (typeStr.includes("keycustomer") || typeStr.includes("kc") || typeStr.includes("khachhang")) {
                             colorMapping[normalizedProv] = "#ea7f1a"; 
                         }
                     }
