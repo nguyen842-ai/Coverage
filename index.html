@@ -105,9 +105,8 @@
             white-space: nowrap;
         }
 
-        /* Khi xuất ảnh: Phóng to chữ và ghim tự động theo tỷ lệ */
+        /* Khi xuất ảnh: Ghim tự động theo tỷ lệ */
         .exporting .map-label { 
-            font-size: 32px !important; 
             text-shadow: -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff, 0px 0px 12px #fff !important;
         }
         .exporting .custom-div-icon {
@@ -185,7 +184,7 @@
 
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
-            <button class="export-btn green" id="exportBtn">📸 Xuất ảnh Siêu Nét (5x Ultra-HD)</button>
+            <button class="export-btn green" id="exportBtn">📸 Xuất ảnh </button>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -547,7 +546,7 @@
             setTimeout(() => {
                 html2canvas(mapContainer, {
                     useCORS: true,
-                    scale: 5, 
+                    scale: 7, 
                     logging: false,
                     backgroundColor: '#ffffff'
                 }).then(canvas => {
