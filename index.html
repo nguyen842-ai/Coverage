@@ -306,9 +306,9 @@
                     let offset = [0, 0];
                     if (level === 'prov') {
                         let checkName = regionName.toLowerCase();
-                        if (checkName.includes("kien giang")) offset = [40, -30];   
-                        else if (checkName.includes("hai phong")) offset = [-35, -15]; 
-                        else if (checkName.includes("quang ninh")) offset = [-20, -5]; 
+                        if (checkName.includes("Kiên Giang")) offset = [40, -30];   
+                        else if (checkName.includes("Hải Phòng")) offset = [-35, -15]; 
+                        else if (checkName.includes("Quảng Ninh")) offset = [-20, -5]; 
                     }
 
                     layer.bindTooltip(regionName, { 
@@ -401,7 +401,7 @@
                             colorMapping[normalizedProv] = "#002561"; 
                         } 
                         // "Keycustomer", "Key", "khachhang"
-                        else if (typeStr.includes("Key customer") || typeStr.includes("Key") || typeStr.includes("key customer")) {
+                        else if (typeStr.includes("Keycustomer") || typeStr.includes("Key") || typeStr.includes("keycustomer")) {
                             colorMapping[normalizedProv] = "#ea7f1a"; 
                         }
                     }
