@@ -3,12 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Bản Đồ</title>
+    <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
+    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Plugin để đọc file KML -->
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
+    <!-- Plugin đọc Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Thư viện Xuất Hình Ảnh (html2canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -68,10 +72,12 @@
             display: flex; align-items: center; justify-content: center;
             font-size: 11px; font-weight: 800; color: #0047ab;
             box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+            width: 100%; height: 100%; box-sizing: border-box;
         }
         .npp-pin {
             display: flex; align-items: center; justify-content: center;
             font-size: 26px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.4));
+            width: 100%; height: 100%;
         }
         .delete-btn {
             background: #ef4444; color: white; border: none; padding: 6px 10px; 
@@ -80,13 +86,32 @@
         }
         .delete-btn:hover { background: #dc2626; }
 
-        /* Nhãn bản đồ */
+        /* Nhãn bản đồ mặc định */
         .map-label {
             background: transparent !important; border: none !important; box-shadow: none !important;
             font-size: 11px !important; font-weight: bold !important; color: #1e293b !important;
             text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff;
             pointer-events: none;
             white-space: nowrap;
+        }
+
+        /* Khi xuất ảnh: Phóng to chữ và ghim */
+        .exporting .map-label { 
+            font-size: 32px !important; 
+            text-shadow: -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff, 0px 0px 12px #fff !important;
+        }
+        .exporting .custom-div-icon {
+            width: 64px !important;
+            height: 64px !important;
+            margin-left: -32px !important;
+            margin-top: -32px !important;
+        }
+        .exporting .kc-pin { 
+            font-size: 26px !important; 
+            border-width: 5px !important;
+        }
+        .exporting .npp-pin { 
+            font-size: 60px !important; 
         }
 
         #loader { display: none; font-size: 12px; color: #ea580c; font-weight: bold; margin-top: 10px; text-align: center; }
@@ -128,6 +153,7 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
+        <!-- AUTO EXCEL UPLOAD TOOL -->
         <div class="tool-group">
             <label>Tô màu Tự Động bằng Excel</label>
             <div class="excel-upload-wrapper">
@@ -142,19 +168,20 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
+        <!-- HIGH-RES IMAGE EXPORT TOOL -->
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
-            <button class="export-btn" id="exportBtn">📸 Xuất ảnh</button>
+            <button class="export-btn" id="exportBtn">📸 Xuất ảnh Siêu Nét (5x Ultra-HD)</button>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
         <div class="toggle-row">
-            <span>Hiện nhãn Tỉnh/TP</span>
+            <span>Hiện nhãn Tỉnh/TP (GID_0)</span>
             <label class="switch"><input type="checkbox" id="toggleLabelProv"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
-            <span>Hiện nhãn Quận/Huyện</span>
+            <span>Hiện nhãn Quận/Huyện (NAME_1)</span>
             <label class="switch"><input type="checkbox" id="toggleLabelDist"><span class="slider"></span></label>
         </div>
         
@@ -162,8 +189,13 @@
     </div>
 
     <script>
-        // CRITICAL FIX: Thêm preferCanvas: true giúp ép Leaflet vẽ dạng bitmap phẳng, giúp html2canvas chụp được lớp phủ hoàn hảo
-        const map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([16.047, 105.804], 6);
+        const map = L.map('map', { 
+            zoomControl: false, 
+            preferCanvas: true,
+            zoomSnap: 0.15,  
+            zoomDelta: 0.25  
+        }).setView([16.047, 105.804], 6);
+        
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
         const layerSelect = document.getElementById('layerSelect');
@@ -196,9 +228,6 @@
             borderColorPickerGroup.style.display = display;
         });
 
-        // ----------------------------------------------------
-        // LOGIC TRÍCH XUẤT NHÃN THEO KHÓA CỦA BẠN (TỈNH: GID_0 | HUYỆN: NAME_1)
-        // ----------------------------------------------------
         function extractRegionName(feature, level) {
             const props = feature.properties;
             if (!props) return "";
@@ -214,12 +243,9 @@
             return name.trim();
         }
 
-        // ----------------------------------------------------
-        // CHUẨN HÓA TÊN ĐỂ MAP EXCEL THÔNG MINH
-        // ----------------------------------------------------
         function normalizeName(str) {
             if (!str) return "";
-            let n = str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").trim();
+            let n = str.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").trim();
             n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "").replace(/\./g, "").trim();
             
             if (n === "hcm" || n === "hcmc" || n === "ho chi minh") {
@@ -339,7 +365,7 @@
             }
         }
 
-        // --- ĐỌC FILE EXCEL ---
+        // --- ĐỌC FILE EXCEL CẢI TIẾN ---
         excelFile.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -352,21 +378,30 @@
                 const data = new Uint8Array(evt.target.result);
                 const workbook = XLSX.read(data, {type: 'array'});
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                const rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1}); 
+                
+                // CRITICAL FIX: Ép thư viện đọc chính xác theo tên cột A, B, C, D... 
+                // Tránh trường hợp Cột A, B trống làm mảng dữ liệu bị dịch lùi sang trái.
+                const rows = XLSX.utils.sheet_to_json(firstSheet, {header: "A"}); 
 
                 let colorMapping = {}; 
 
-                for (let i = 1; i < rows.length; i++) {
-                    let provCell = rows[i][2]; // Cột C
-                    let typeCell = rows[i][3]; // Cột D
+                // Lặp qua toàn bộ dòng (kể cả dòng tiêu đề nếu có, vì ta filter bằng text)
+                for (let i = 0; i < rows.length; i++) {
+                    let provCell = rows[i]["C"]; // Cột C tuyệt đối
+                    let typeCell = rows[i]["D"]; // Cột D tuyệt đối
 
                     if (provCell && typeCell) {
                         let normalizedProv = normalizeName(provCell);
-                        let typeStr = typeCell.toString().toLowerCase().trim();
                         
-                        if (typeStr.includes("Distributor")) {
+                        // Loại bỏ hoàn toàn khoảng trắng, gạch nối, dấu chấm để so khớp chính xác 100%
+                        let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
+                        
+                        // "Distributor", "npp", "nhaphanphoi"
+                        if (typeStr.includes("Distributor") || typeStr.includes("npp") || typeStr.includes("NPP")) {
                             colorMapping[normalizedProv] = "#002561"; 
-                        } else if (typeStr.includes("key customer")) {
+                        } 
+                        // "Keycustomer", "Key", "khachhang"
+                        else if (typeStr.includes("Key customer") || typeStr.includes("Key") || typeStr.includes("key customer")) {
                             colorMapping[normalizedProv] = "#ea7f1a"; 
                         }
                     }
@@ -378,7 +413,6 @@
                     
                     currentGeoLayer.eachLayer(function(layer) {
                         if (layer.feature) {
-                            // Khớp động theo GID_0 hoặc NAME_1 tùy lớp bản đồ đang chọn
                             let mapTargetName = extractRegionName(layer.feature, level);
                             let normalizedMapTarget = normalizeName(mapTargetName);
 
@@ -400,28 +434,34 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // --- XUẤT HÌNH ẢNH SIÊU NÉT (3X RESOLUTION) ---
+        // --- XUẤT HÌNH ẢNH SIÊU NÉT ---
         exportBtn.addEventListener('click', function() {
             loader.style.display = 'block';
-            loader.innerText = 'Đang xuất hình ảnh siêu nét (3x HD)... Vui lòng đợi.';
+            loader.innerText = 'Đang tối ưu hóa kích thước chữ/ghim và kết xuất hình ảnh 5x Ultra-HD...';
 
             const mapContainer = document.getElementById('map');
+            document.body.classList.add('exporting');
 
-            html2canvas(mapContainer, {
-                useCORS: true,
-                scale: 5, 
-                logging: false,
-                backgroundColor: '#ffffff'
-            }).then(canvas => {
-                const link = document.createElement('a');
-                link.download = 'ban_do_xuat_ban_' + Date.now() + '.png';
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                loader.style.display = 'none';
-            }).catch(err => {
-                alert('Có lỗi xảy ra khi render ảnh: ' + err);
-                loader.style.display = 'none';
-            });
+            setTimeout(() => {
+                html2canvas(mapContainer, {
+                    useCORS: true,
+                    scale: 5, 
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                }).then(canvas => {
+                    const link = document.createElement('a');
+                    link.download = 'ban_do_viet_nam_ultra_hd_' + Date.now() + '.png';
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    
+                    document.body.classList.remove('exporting');
+                    loader.style.display = 'none';
+                }).catch(err => {
+                    alert('Có lỗi xảy ra khi kết xuất ảnh: ' + err);
+                    document.body.classList.remove('exporting');
+                    loader.style.display = 'none';
+                });
+            }, 300);
         });
 
         // Xóa ghim
@@ -435,7 +475,7 @@
             let uniqueId = Date.now();
             let icon = L.divIcon({
                 className: 'custom-div-icon',
-                html: `<div class="kc-pin" style="width: 24px; height: 24px;">${value}</div>`,
+                html: `<div class="kc-pin">${value}</div>`,
                 iconSize: [28, 28], iconAnchor: [14, 14]
             });
             let marker = L.marker(latlng, { icon: icon, customId: uniqueId }).addTo(markersLayer);
