@@ -3,16 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Bản Đồ</title>
+    <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
-    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Plugin để đọc file KML -->
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
-    <!-- Plugin đọc Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Thư viện Xuất Hình Ảnh (html2canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -153,14 +149,13 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <!-- AUTO EXCEL UPLOAD TOOL -->
         <div class="tool-group">
             <label>Tô màu Tự Động bằng Excel</label>
             <div class="excel-upload-wrapper">
                 <label for="excelFile">Tải lên file Excel (.xlsx)</label>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
                 <div class="excel-note">
-                    Cột C: Khớp Mã Định Danh | Cột D: Loại<br>
+                    Cột C: Tỉnh/TP/Huyện | Cột D: Loại<br>
                     (Distributor -> #002561 | Key customer -> #ea7f1a)
                 </div>
             </div>
@@ -168,7 +163,6 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <!-- HIGH-RES IMAGE EXPORT TOOL -->
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
             <button class="export-btn" id="exportBtn">📸 Xuất ảnh Siêu Nét (5x Ultra-HD)</button>
@@ -177,11 +171,11 @@
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
         <div class="toggle-row">
-            <span>Hiện nhãn Tỉnh/TP (GID_0)</span>
+            <span>Hiện nhãn Tỉnh/TP</span>
             <label class="switch"><input type="checkbox" id="toggleLabelProv"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
-            <span>Hiện nhãn Quận/Huyện (NAME_1)</span>
+            <span>Hiện nhãn Quận/Huyện</span>
             <label class="switch"><input type="checkbox" id="toggleLabelDist"><span class="slider"></span></label>
         </div>
         
@@ -228,30 +222,37 @@
             borderColorPickerGroup.style.display = display;
         });
 
+        // ĐÃ KHẮC PHỤC: Rút chính xác Tên Tỉnh (NAME_1) và Tên Huyện (NAME_2)
         function extractRegionName(feature, level) {
             const props = feature.properties;
             if (!props) return "";
             
             let name = "";
             if (level === 'prov') {
-                name = props.GID_0 || props.name || props.Name || "";
-            } else {
                 name = props.NAME_1 || props.name || props.Name || "";
+            } else {
+                name = props.NAME_2 || props.name || props.Name || "";
             }
 
             if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") return "";
             return name.trim();
         }
 
-        function normalizeName(str) {
+        // BỘ LỌC CHỮ SIÊU MẠNH: Xóa hết khoảng trắng, gạch nối, ép về chữ thường không dấu
+        function getMatchKey(str) {
             if (!str) return "";
-            let n = str.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").trim();
-            n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "").replace(/\./g, "").trim();
+            let n = str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
             
-            if (n === "hcm" || n === "hcmc" || n === "ho chi minh") {
-                return "ho chi minh";
-            }
-            return n;
+            // Xóa tiền tố
+            n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "");
+            
+            // Đồng bộ tên gọi đặc biệt
+            if (n.includes("ho chi minh") || n.includes("hcm")) n = "hochiminh";
+            if (n.includes("ba ria") && n.includes("vung tau")) n = "bariavungtau";
+            if (n.includes("thua thien hue")) n = "thuathienhue";
+            
+            // Ép dính liền mọi ký tự (xóa khoảng trắng, dấu phẩy, gạch ngang...)
+            return n.replace(/[^a-z0-9]/g, "");
         }
 
         function applyFeatureStyle(layer, isSelectedForColoring = false) {
@@ -306,9 +307,9 @@
                     let offset = [0, 0];
                     if (level === 'prov') {
                         let checkName = regionName.toLowerCase();
-                        if (checkName.includes("kien giang")) offset = [40, -30];   
-                        else if (checkName.includes("hai phong")) offset = [-35, -15]; 
-                        else if (checkName.includes("quang ninh")) offset = [-20, -5]; 
+                        if (checkName.includes("kiên giang") || checkName.includes("kien giang")) offset = [40, -30];   
+                        else if (checkName.includes("hải phòng") || checkName.includes("hai phong")) offset = [-35, -15]; 
+                        else if (checkName.includes("quảng ninh") || checkName.includes("quang ninh")) offset = [-20, -5]; 
                     }
 
                     layer.bindTooltip(regionName, { 
@@ -365,7 +366,7 @@
             }
         }
 
-        // --- ĐỌC FILE EXCEL CẢI TIẾN ---
+        // --- ĐỌC FILE EXCEL KHỚP DỮ LIỆU ---
         excelFile.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -379,30 +380,24 @@
                 const workbook = XLSX.read(data, {type: 'array'});
                 const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
                 
-                // CRITICAL FIX: Ép thư viện đọc chính xác theo tên cột A, B, C, D... 
-                // Tránh trường hợp Cột A, B trống làm mảng dữ liệu bị dịch lùi sang trái.
                 const rows = XLSX.utils.sheet_to_json(firstSheet, {header: "A"}); 
 
                 let colorMapping = {}; 
 
-                // Lặp qua toàn bộ dòng (kể cả dòng tiêu đề nếu có, vì ta filter bằng text)
                 for (let i = 0; i < rows.length; i++) {
                     let provCell = rows[i]["C"]; // Cột C tuyệt đối
                     let typeCell = rows[i]["D"]; // Cột D tuyệt đối
 
                     if (provCell && typeCell) {
-                        let normalizedProv = normalizeName(provCell);
+                        let matchKey = getMatchKey(provCell);
                         
-                        // Loại bỏ hoàn toàn khoảng trắng, gạch nối, dấu chấm để so khớp chính xác 100%
                         let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
                         
-                        // "distributor", "npp", "nhaphanphoi"
                         if (typeStr.includes("distributor") || typeStr.includes("npp") || typeStr.includes("nhaphanphoi")) {
-                            colorMapping[normalizedProv] = "#002561"; 
+                            colorMapping[matchKey] = "#002561"; 
                         } 
-                        // "keycustomer", "kc", "khachhang"
                         else if (typeStr.includes("keycustomer") || typeStr.includes("kc") || typeStr.includes("khachhang")) {
-                            colorMapping[normalizedProv] = "#ea7f1a"; 
+                            colorMapping[matchKey] = "#ea7f1a"; 
                         }
                     }
                 }
@@ -414,10 +409,10 @@
                     currentGeoLayer.eachLayer(function(layer) {
                         if (layer.feature) {
                             let mapTargetName = extractRegionName(layer.feature, level);
-                            let normalizedMapTarget = normalizeName(mapTargetName);
+                            let mapMatchKey = getMatchKey(mapTargetName);
 
-                            if (colorMapping[normalizedMapTarget]) {
-                                layer.options.fillColor = colorMapping[normalizedMapTarget];
+                            if (colorMapping[mapMatchKey]) {
+                                layer.options.fillColor = colorMapping[mapMatchKey];
                                 layer.setStyle({
                                     fillColor: layer.options.fillColor,
                                     fillOpacity: 0.8
