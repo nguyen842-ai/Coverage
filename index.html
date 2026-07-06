@@ -30,6 +30,8 @@
             width: 100%; padding: 8px; border: 1px solid #cbd5e1; border-radius: 6px;
             font-size: 13px; outline: none; cursor: pointer; background: white;
         }
+        
+        #borderColorPickerGroup { margin-top: 10px; }
 
         /* Công tắc (Switch) */
         .toggle-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
@@ -67,6 +69,7 @@
             font-size: 11px !important; font-weight: bold !important; color: #1e293b !important;
             text-shadow: -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff, 0px 0px 4px #fff;
             pointer-events: none;
+            white-space: nowrap;
         }
 
         #loader { display: none; font-size: 12px; color: #ea580c; font-weight: bold; margin-top: 10px; text-align: center; }
@@ -90,7 +93,7 @@
         <div class="tool-group">
             <label>Công cụ tương tác</label>
             <select id="actionSelect">
-                <option value="color">🖌️ Tô màu vùng</option>
+                <option value="color">🖌️ Tô màu vùng & Ranh giới</option>
                 <option value="kc">📍 Ghim Key Customer</option>
                 <option value="npp">⭐ Ghim Distributor (NPP)</option>
             </select>
@@ -99,6 +102,11 @@
         <div class="tool-group" id="colorPickerGroup">
             <label>Chọn màu (Tô vùng)</label>
             <input type="color" id="fillColor" value="#3b82f6">
+        </div>
+        
+        <div class="tool-group" id="borderColorPickerGroup">
+            <label>Chọn màu (Đường ranh giới)</label>
+            <input type="color" id="borderColorInput" value="#64748b">
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -122,7 +130,9 @@
         const layerSelect = document.getElementById('layerSelect');
         const actionSelect = document.getElementById('actionSelect');
         const colorPickerGroup = document.getElementById('colorPickerGroup');
+        const borderColorPickerGroup = document.getElementById('borderColorPickerGroup');
         const fillColor = document.getElementById('fillColor');
+        const borderColorInput = document.getElementById('borderColorInput');
         const toggleLabelProv = document.getElementById('toggleLabelProv');
         const toggleLabelDist = document.getElementById('toggleLabelDist');
         const loader = document.getElementById('loader');
@@ -130,40 +140,76 @@
         let currentGeoLayer = null;
         let markersLayer = L.layerGroup().addTo(map); 
 
-        actionSelect.addEventListener('change', (e) => {
-            colorPickerGroup.style.display = e.target.value === 'color' ? 'block' : 'none';
+        let currentFillColor = fillColor.value;
+        let currentBorderColor = borderColorInput.value;
+
+        fillColor.addEventListener('input', (e) => { currentFillColor = e.target.value; });
+        borderColorInput.addEventListener('input', (e) => {
+            currentBorderColor = e.target.value;
+            updateMapBorderColors();
         });
 
-        // Hàm lấy tên thông minh, quét qua nhiều thuộc tính để tránh lỗi NA
+        actionSelect.addEventListener('change', (e) => {
+            const display = e.target.value === 'color' ? 'block' : 'none';
+            colorPickerGroup.style.display = display;
+            borderColorPickerGroup.style.display = display;
+        });
+
+        // HÀM EXTRACT NHÃN THEO YÊU CẦU CỦA BẠN (TỈNH: VARNAME_1 + GID_0 | HUYỆN: VARNAME_2 + NAME_1)
         function extractRegionName(feature, level) {
             const props = feature.properties;
             if (!props) return "";
 
             let name = "";
             if (level === 'prov') {
-                name = props.NAME_1 || props.name || props.Name || props.VARNAME_1 || "";
+                let varName1 = props.VARNAME_1 || "";
+                let gid0 = props.GID_0 || "";
+
+                if (varName1 === "NA" || varName1 === "null") varName1 = "";
+                if (gid0 === "NA" || gid0 === "null") gid0 = "";
+
+                if (varName1 && gid0) {
+                    name = varName1 + " - " + gid0;
+                } else {
+                    name = varName1 || gid0 || "";
+                }
             } else {
-                name = props.NAME_2 || props.name || props.Name || props.VARNAME_2 || "";
+                let varName2 = props.VARNAME_2 || "";
+                let name1 = props.NAME_1 || "";
+
+                if (varName2 === "NA" || varName2 === "null") varName2 = "";
+                if (name1 === "NA" || name1 === "null") name1 = "";
+
+                if (varName2 && name1) {
+                    name = varName2 + " - " + name1;
+                } else {
+                    name = varName2 || name1 || "";
+                }
             }
 
-            // Loại trừ các trường hợp dữ liệu hỏng thường gặp trong GADM
             if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") {
                 return "";
             }
-            return name;
+            return name.trim();
+        }
+
+        function applyFeatureStyle(layer, isSelectedForColoring = false) {
+            layer.setStyle({
+                color: currentBorderColor, 
+                weight: 1.5, 
+                fillColor: isSelectedForColoring ? currentFillColor : (layer.options.fillColor || "#f1f5f9"),
+                fillOpacity: isSelectedForColoring ? 0.8 : (layer.options.fillOpacity || 0.5)
+            });
         }
 
         function setupFeature(feature, layer) {
-            layer.setStyle({
-                color: "#64748b", weight: 1.5, fillColor: "#f1f5f9", fillOpacity: 0.5
-            });
-
+            applyFeatureStyle(layer);
             applyLabelVisibility(feature, layer);
 
             layer.on('click', function(e) {
                 const action = actionSelect.value;
                 if (action === 'color') {
-                    layer.setStyle({ fillColor: fillColor.value, fillOpacity: 0.8 });
+                    applyFeatureStyle(layer, true);
                 } else if (action === 'kc') {
                     let kcValue = prompt("Nhập số liệu cho Key Customer:", "10");
                     if (kcValue !== null && kcValue.trim() !== "") {
@@ -177,6 +223,16 @@
                     }
                 }
             });
+        }
+
+        function updateMapBorderColors() {
+            if (currentGeoLayer) {
+                currentGeoLayer.eachLayer(function(layer) {
+                    if (layer.feature) {
+                        layer.setStyle({ color: currentBorderColor });
+                    }
+                });
+            }
         }
 
         function applyLabelVisibility(feature, layer) {
@@ -212,6 +268,7 @@
                     .on('ready', function() {
                         this.eachLayer(function(layer) { setupFeature(layer.feature, layer); });
                         loader.style.display = 'none';
+                        updateMapBorderColors();
                         refreshLabels();
                     })
                     .on('error', function() {
@@ -227,6 +284,7 @@
                             onEachFeature: setupFeature
                         }).addTo(map);
                         loader.style.display = 'none';
+                        updateMapBorderColors();
                         refreshLabels();
                     })
                     .catch(err => {
@@ -236,7 +294,6 @@
             }
         }
 
-        // --- GLOBAL FUNCTION ĐỂ XÓA GHIM TỪ TRONG POPUP ---
         window.deleteMarker = function(markerId) {
             markersLayer.eachLayer(layer => {
                 if (layer.options.customId === markerId) {
@@ -264,7 +321,6 @@
                 </div>
             `;
             marker.bindPopup(popupHtml);
-            marker.on('dblclick', () => { markersLayer.removeLayer(marker); });
         }
 
         function addNPPPin(latlng, note) {
@@ -286,7 +342,6 @@
                 </div>
             `;
             marker.bindPopup(popupHtml);
-            marker.on('dblclick', () => { markersLayer.removeLayer(marker); });
         }
 
         map.on('click', function(e) {
