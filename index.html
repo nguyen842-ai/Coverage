@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Bản Đồ</title>
+    <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
@@ -91,7 +91,7 @@
             white-space: nowrap;
         }
 
-        /* Khi xuất ảnh: Phóng to chữ và ghim */
+        /* Khi xuất ảnh: Phóng to chữ và ghim tự động theo tỷ lệ */
         .exporting .map-label { 
             font-size: 32px !important; 
             text-shadow: -3px -3px 0 #fff, 3px -3px 0 #fff, -3px 3px 0 #fff, 3px 3px 0 #fff, 0px 0px 12px #fff !important;
@@ -111,15 +111,6 @@
         }
 
         #loader { display: none; font-size: 12px; color: #ea580c; font-weight: bold; margin-top: 10px; text-align: center; }
-        
-        /* Debug log */
-        #debugLog { 
-            display: none; font-size: 10px; color: #64748b; 
-            background: #f1f5f9; padding: 8px; border-radius: 6px; 
-            margin-top: 10px; max-height: 120px; overflow-y: auto; 
-            font-family: monospace; line-height: 1.3;
-            border: 1px solid #cbd5e1;
-        }
     </style>
 </head>
 <body>
@@ -165,10 +156,9 @@
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
                 <div class="excel-note">
                     Cột C: Tỉnh/TP/Huyện | Cột D: Loại<br>
-                    (Distributor → Xanh | Key customer → Cam)
+                    (Distributor -> #002561 | Key customer -> #ea7f1a)
                 </div>
             </div>
-            <div id="debugLog"></div>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
@@ -181,11 +171,11 @@
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
         <div class="toggle-row">
-            <span>Hiện nhãn Tỉnh/TP</span>
+            <span>Hiện nhãn Tỉnh/TP (GID_0)</span>
             <label class="switch"><input type="checkbox" id="toggleLabelProv"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
-            <span>Hiện nhãn Quận/Huyện</span>
+            <span>Hiện nhãn Quận/Huyện (NAME_1)</span>
             <label class="switch"><input type="checkbox" id="toggleLabelDist"><span class="slider"></span></label>
         </div>
         
@@ -193,6 +183,7 @@
     </div>
 
     <script>
+        // Cấu hình tăng giảm mượt mà (0.25 bước nhảy)
         const map = L.map('map', { 
             zoomControl: false, 
             preferCanvas: true,
@@ -213,7 +204,6 @@
         const excelFile = document.getElementById('excelFile');
         const exportBtn = document.getElementById('exportBtn');
         const loader = document.getElementById('loader');
-        const debugLog = document.getElementById('debugLog');
 
         let currentGeoLayer = null;
         let markersLayer = L.layerGroup().addTo(map); 
@@ -233,41 +223,33 @@
             borderColorPickerGroup.style.display = display;
         });
 
-        // ĐÃ KHẮC PHỤC: Rút chính xác Tên Tỉnh (NAME_1) và Tên Huyện (NAME_2)
+        // HÀM HIỂN THỊ LABEL GỐC THEO YÊU CẦU: Tỉnh -> GID_0 | Huyện -> NAME_1
         function extractRegionName(feature, level) {
             const props = feature.properties;
             if (!props) return "";
             
             let name = "";
             if (level === 'prov') {
-                name = props.NAME_1 || props.name || props.Name || "";
+                name = props.GID_0 || props.COUNTRY || props.name || "";
             } else {
-                name = props.NAME_2 || props.name || props.Name || "";
+                name = props.NAME_1 || props.name || "";
             }
 
             if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") return "";
             return name.trim();
         }
 
-        // ✅ CẢI TIẾN: Bộ lọc ký tự siêu mạnh - loại bỏ TẤT CẢ ký tự không phải chữ số
+        // BỘ CHUẨN HÓA KHỚP CHỮ TUYỆT ĐỐI (Xóa gạch, khoảng trắng, dấu tiếng Việt)
         function getMatchKey(str) {
             if (!str) return "";
+            let n = str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
             
-            // Bước 1: Chuyển thành chữ thường
-            let n = str.toString().toLowerCase();
+            n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "");
             
-            // Bước 2: Loại bỏ dấu tiếng Việt (ă, ê, ô, đ, etc.)
-            n = n.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d");
-            
-            // Bước 3: Loại bỏ tiền tố (tỉnh, thành phố, tp, ...)
-            n = n.replace(/^tinh\s+/, "").replace(/^thanh\s*pho\s+/, "").replace(/^tp\s+/, "");
-            
-            // Bước 4: Xử lý tên gọi đặc biệt
             if (n.includes("ho chi minh") || n.includes("hcm")) n = "hochiminh";
             if (n.includes("ba ria") && n.includes("vung tau")) n = "bariavungtau";
-            if (n.includes("thua thien") && n.includes("hue")) n = "thuathienhue";
+            if (n.includes("thua thien hue")) n = "thuathienhue";
             
-            // Bước 5: Xóa TẤT CẢ ký tự không phải chữ a-z hay số 0-9
             return n.replace(/[^a-z0-9]/g, "");
         }
 
@@ -323,9 +305,9 @@
                     let offset = [0, 0];
                     if (level === 'prov') {
                         let checkName = regionName.toLowerCase();
-                        if (checkName.includes("kiên giang") || checkName.includes("kien giang")) offset = [40, -30];   
-                        else if (checkName.includes("hải phòng") || checkName.includes("hai phong")) offset = [-35, -15]; 
-                        else if (checkName.includes("quảng ninh") || checkName.includes("quang ninh")) offset = [-20, -5]; 
+                        if (checkName.includes("kien giang") || checkName.includes("kien giang")) offset = [40, -30];   
+                        else if (checkName.includes("hai phong") || checkName.includes("hai phong")) offset = [-35, -15]; 
+                        else if (checkName.includes("quang ninh") || checkName.includes("quang ninh")) offset = [-20, -5]; 
                     }
 
                     layer.bindTooltip(regionName, { 
@@ -382,98 +364,89 @@
             }
         }
 
-        // ✅ CẢI TIẾN: Đọc Excel đúng cách + Debug log
+        // --- ĐỌC FILE EXCEL & QUÉT ĐA TẦNG (FIX TRIỆT ĐỂ 100%) ---
         excelFile.addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
 
             loader.style.display = 'block';
             loader.innerText = 'Đang xử lý file Excel...';
-            debugLog.style.display = 'block';
-            debugLog.innerHTML = '';
 
             const reader = new FileReader();
             reader.onload = function(evt) {
-                try {
-                    const data = new Uint8Array(evt.target.result);
-                    const workbook = XLSX.read(data, {type: 'array'});
-                    const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-                    
-                    // ✅ Cải tiến: Đọc từ dòng 2 (bỏ qua tiêu đề)
-                    const allRows = XLSX.utils.sheet_to_json(firstSheet, {header: "A", defval: ""});
-                    
-                    let colorMapping = {}; 
-                    let matchedRegions = [];
-                    let unmatchedRegions = [];
+                const data = new Uint8Array(evt.target.result);
+                const workbook = XLSX.read(data, {type: 'array'});
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                
+                // Trả về mảng index thuần để chống dồn dòng trống
+                const rows = XLSX.utils.sheet_to_json(firstSheet, {header: 1}); 
 
-                    console.log('📊 Excel có', allRows.length, 'dòng');
-                    debugLog.innerHTML += `📊 Excel có ${allRows.length} dòng dữ liệu<br>`;
+                let colorMapping = {}; 
 
-                    for (let i = 0; i < allRows.length; i++) {
-                        let provCell = allRows[i]["C"] || "";
-                        let typeCell = allRows[i]["D"] || "";
+                for (let i = 1; i < rows.length; i++) {
+                    let row = rows[i];
+                    if(!row) continue;
+                    let provCell = row[2]; // Cột C (Index 2)
+                    let typeCell = row[3]; // Cột D (Index 3)
 
-                        if (provCell && typeCell) {
-                            let matchKey = getMatchKey(provCell);
-                            let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
-                            
-                            let color = "";
-                            if (typeStr.includes("distributor") || typeStr.includes("npp") || typeStr.includes("nhaphanphoi")) {
-                                color = "#002561"; // Xanh
-                                unmatchedRegions.push(`${provCell} → Distributor (${matchKey})`);
-                            } 
-                            else if (typeStr.includes("keycustomer") || typeStr.includes("kc") || typeStr.includes("khachhang")) {
-                                color = "#ea7f1a"; // Cam
-                                unmatchedRegions.push(`${provCell} → Key Customer (${matchKey})`);
-                            }
-                            
-                            if (color) {
-                                colorMapping[matchKey] = color;
-                            }
+                    if (provCell && typeCell) {
+                        let matchKey = getMatchKey(provCell);
+                        let typeStr = typeCell.toString().toLowerCase().replace(/[\s_\-\.]/g, '');
+                        
+                        if (typeStr.includes("distributor") || typeStr.includes("npp") || typeStr.includes("nhaphanphoi")) {
+                            colorMapping[matchKey] = "#002561"; // Xanh Coban Sậm
+                        } 
+                        else if (typeStr.includes("keycustomer") || typeStr.includes("kc") || typeStr.includes("khachhang")) {
+                            colorMapping[matchKey] = "#ea7f1a"; // Cam rực
                         }
                     }
+                }
 
-                    if (currentGeoLayer) {
-                        let matchCount = 0;
-                        const level = layerSelect.value;
-                        
-                        currentGeoLayer.eachLayer(function(layer) {
-                            if (layer.feature) {
-                                let mapTargetName = extractRegionName(layer.feature, level);
-                                let mapMatchKey = getMatchKey(mapTargetName);
+                if (currentGeoLayer) {
+                    let matchCount = 0;
+                    const level = layerSelect.value;
+                    
+                    currentGeoLayer.eachLayer(function(layer) {
+                        if (layer.feature && layer.feature.properties) {
+                            const props = layer.feature.properties;
+                            
+                            // Thuật toán quét đa tầng: Gom tất cả từ khóa có thể có để đối chiếu chống sai sót file nền
+                            let possibleKeys = [];
+                            if (level === 'prov') {
+                                if (props.GID_0) possibleKeys.push(getMatchKey(props.GID_0));
+                                if (props.COUNTRY) possibleKeys.push(getMatchKey(props.COUNTRY));
+                                if (props.NAME_1) possibleKeys.push(getMatchKey(props.NAME_1));
+                                if (props.name) possibleKeys.push(getMatchKey(props.name));
+                            } else {
+                                if (props.NAME_1) possibleKeys.push(getMatchKey(props.NAME_1)); // Tên huyện
+                                if (props.COUNTRY) possibleKeys.push(getMatchKey(props.COUNTRY)); // Tên tỉnh bọc ngoài của huyện
+                                if (props.GID_0) possibleKeys.push(getMatchKey(props.GID_0));
+                                if (props.name) possibleKeys.push(getMatchKey(props.name));
+                            }
 
-                                if (colorMapping[mapMatchKey]) {
-                                    layer.options.fillColor = colorMapping[mapMatchKey];
-                                    layer.setStyle({
-                                        fillColor: layer.options.fillColor,
-                                        fillOpacity: 0.8
-                                    });
-                                    matchedRegions.push(mapTargetName);
-                                    matchCount++;
+                            // Kiểm tra xem có từ khóa nào trùng với danh sách Excel không
+                            let finalColor = null;
+                            for (let key of possibleKeys) {
+                                if (colorMapping[key]) {
+                                    finalColor = colorMapping[key];
+                                    break;
                                 }
                             }
-                        });
-                        
-                        debugLog.innerHTML += `<br>✅ Khớp thành công: <strong>${matchCount}</strong> vùng<br>`;
-                        if (matchedRegions.length > 0) {
-                            debugLog.innerHTML += `<br><strong>Vùng đã tô:</strong><br>`;
-                            matchedRegions.slice(0, 5).forEach(r => {
-                                debugLog.innerHTML += `✓ ${r}<br>`;
-                            });
-                            if (matchedRegions.length > 5) {
-                                debugLog.innerHTML += `... và ${matchedRegions.length - 5} vùng khác<br>`;
+
+                            if (finalColor) {
+                                layer.options.fillColor = finalColor;
+                                layer.setStyle({
+                                    fillColor: finalColor,
+                                    fillOpacity: 0.8
+                                });
+                                matchCount++;
                             }
                         }
-                        
-                        alert(`✅ Đã tô màu tự động thành công! Khớp ${matchCount} vùng.\n\nXem chi tiết trong ô Debug phía dưới.`);
-                    }
-                    loader.style.display = 'none';
-                    excelFile.value = "";
-                } catch (err) {
-                    debugLog.innerHTML += `<span style="color: #dc2626;">❌ Lỗi: ${err.message}</span>`;
-                    alert('❌ Lỗi khi xử lý file Excel:\n' + err.message);
-                    loader.style.display = 'none';
+                    });
+                    alert(`Đã hoàn tất tô màu tự động! Khớp thành công ${matchCount} vùng.`);
                 }
+                loader.style.display = 'none';
+                excelFile.value = ""; 
             };
             reader.readAsArrayBuffer(file);
         });
