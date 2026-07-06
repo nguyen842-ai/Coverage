@@ -5,14 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Công Cụ Tô Màu & Đánh Dấu Bản Đồ</title>
     
-    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Plugin để đọc file KML -->
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
-    <!-- Plugin đọc Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Thư viện Xuất Hình Ảnh (html2canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -132,14 +128,13 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <!-- AUTO EXCEL UPLOAD TOOL -->
         <div class="tool-group">
             <label>Tô màu Tự Động bằng Excel</label>
             <div class="excel-upload-wrapper">
                 <label for="excelFile">Tải lên file Excel (.xlsx)</label>
                 <input type="file" id="excelFile" accept=".xlsx, .xls, .csv">
                 <div class="excel-note">
-                    Cột C: Tỉnh/TP | Cột D: Loại<br>
+                    Cột C: Khớp Mã Định Danh | Cột D: Loại<br>
                     (Distributor -> #002561 | Key customer -> #ea7f1a)
                 </div>
             </div>
@@ -147,7 +142,6 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <!-- HIGH-RES IMAGE EXPORT TOOL -->
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
             <button class="export-btn" id="exportBtn">📸 Xuất ảnh siêu nét (3x HD)</button>
@@ -156,11 +150,11 @@
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
         <div class="toggle-row">
-            <span>Hiện nhãn Tỉnh/TP</span>
+            <span>Hiện nhãn Tỉnh/TP (GID_0)</span>
             <label class="switch"><input type="checkbox" id="toggleLabelProv"><span class="slider"></span></label>
         </div>
         <div class="toggle-row">
-            <span>Hiện nhãn Quận/Huyện</span>
+            <span>Hiện nhãn Quận/Huyện (NAME_1)</span>
             <label class="switch"><input type="checkbox" id="toggleLabelDist"><span class="slider"></span></label>
         </div>
         
@@ -168,7 +162,8 @@
     </div>
 
     <script>
-        const map = L.map('map', { zoomControl: false }).setView([16.047, 105.804], 6);
+        // CRITICAL FIX: Thêm preferCanvas: true giúp ép Leaflet vẽ dạng bitmap phẳng, giúp html2canvas chụp được lớp phủ hoàn hảo
+        const map = L.map('map', { zoomControl: false, preferCanvas: true }).setView([16.047, 105.804], 6);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
         const layerSelect = document.getElementById('layerSelect');
@@ -202,7 +197,7 @@
         });
 
         // ----------------------------------------------------
-        // LOGIC LẤY TÊN VÙNG & XỬ LÝ OFFSET CHO CÁC TỈNH CÓ ĐẢO
+        // LOGIC TRÍCH XUẤT NHÃN THEO KHÓA CỦA BẠN (TỈNH: GID_0 | HUYỆN: NAME_1)
         // ----------------------------------------------------
         function extractRegionName(feature, level) {
             const props = feature.properties;
@@ -210,9 +205,9 @@
             
             let name = "";
             if (level === 'prov') {
-                name = props.NAME_1 || props.name || props.Name || "";
+                name = props.GID_0 || props.name || props.Name || "";
             } else {
-                name = props.NAME_2 || props.name || props.Name || "";
+                name = props.NAME_1 || props.name || props.Name || "";
             }
 
             if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") return "";
@@ -220,11 +215,11 @@
         }
 
         // ----------------------------------------------------
-        // CHUẨN HÓA TÊN (PHỤC VỤ EXCEL MAPPING THÔNG MINH)
+        // CHUẨN HÓA TÊN ĐỂ MAP EXCEL THÔNG MINH
         // ----------------------------------------------------
         function normalizeName(str) {
             if (!str) return "";
-            let n = str.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d").trim();
+            let n = str.toString().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/đ/g, "d").trim();
             n = n.replace(/^tinh\s+/, "").replace(/^thanh pho\s+/, "").replace(/^tp\s+/, "").replace(/\./g, "").trim();
             
             if (n === "hcm" || n === "hcmc" || n === "ho chi minh") {
@@ -285,9 +280,9 @@
                     let offset = [0, 0];
                     if (level === 'prov') {
                         let checkName = regionName.toLowerCase();
-                        if (checkName.includes("kiên giang")) offset = [40, -30];   
-                        else if (checkName.includes("hải phòng")) offset = [-35, -15]; 
-                        else if (checkName.includes("quảng ninh")) offset = [-20, -5]; 
+                        if (checkName.includes("kien giang")) offset = [40, -30];   
+                        else if (checkName.includes("hai phong")) offset = [-35, -15]; 
+                        else if (checkName.includes("quang ninh")) offset = [-20, -5]; 
                     }
 
                     layer.bindTooltip(regionName, { 
@@ -362,8 +357,8 @@
                 let colorMapping = {}; 
 
                 for (let i = 1; i < rows.length; i++) {
-                    let provCell = rows[i][2]; 
-                    let typeCell = rows[i][3]; 
+                    let provCell = rows[i][2]; // Cột C
+                    let typeCell = rows[i][3]; // Cột D
 
                     if (provCell && typeCell) {
                         let normalizedProv = normalizeName(provCell);
@@ -379,13 +374,16 @@
 
                 if (currentGeoLayer) {
                     let matchCount = 0;
+                    const level = layerSelect.value;
+                    
                     currentGeoLayer.eachLayer(function(layer) {
                         if (layer.feature) {
-                            let mapProvName = layer.feature.properties.NAME_1 || layer.feature.properties.name || "";
-                            let normalizedMapProv = normalizeName(mapProvName);
+                            // Khớp động theo GID_0 hoặc NAME_1 tùy lớp bản đồ đang chọn
+                            let mapTargetName = extractRegionName(layer.feature, level);
+                            let normalizedMapTarget = normalizeName(mapTargetName);
 
-                            if (colorMapping[normalizedMapProv]) {
-                                layer.options.fillColor = colorMapping[normalizedMapProv];
+                            if (colorMapping[normalizedMapTarget]) {
+                                layer.options.fillColor = colorMapping[normalizedMapTarget];
                                 layer.setStyle({
                                     fillColor: layer.options.fillColor,
                                     fillOpacity: 0.8
@@ -405,14 +403,13 @@
         // --- XUẤT HÌNH ẢNH SIÊU NÉT (3X RESOLUTION) ---
         exportBtn.addEventListener('click', function() {
             loader.style.display = 'block';
-            loader.innerText = 'Đang render và xuất hình ảnh siêu nét (3x HD)... Vui lòng đợi trong giây lát.';
+            loader.innerText = 'Đang xuất hình ảnh siêu nét (3x HD)... Vui lòng đợi.';
 
-            // Nhắm mục tiêu container bản đồ (Bảng công cụ .toolbox nằm ngoài container này nên không bị dính vào ảnh)
             const mapContainer = document.getElementById('map');
 
             html2canvas(mapContainer, {
                 useCORS: true,
-                scale: 3, // Tăng mật độ pixel lên gấp 3 lần độ phân giải màn hình thông thường
+                scale: 3, 
                 logging: false,
                 backgroundColor: '#ffffff'
             }).then(canvas => {
@@ -420,7 +417,6 @@
                 link.download = 'ban_do_xuat_ban_' + Date.now() + '.png';
                 link.href = canvas.toDataURL('image/png');
                 link.click();
-                
                 loader.style.display = 'none';
             }).catch(err => {
                 alert('Có lỗi xảy ra khi render ảnh: ' + err);
