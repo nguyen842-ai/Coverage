@@ -53,6 +53,14 @@
             font-size: 26px; filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.4));
         }
 
+        /* Nút xóa trong popup */
+        .delete-btn {
+            background: #ef4444; color: white; border: none; padding: 6px 10px; 
+            border-radius: 4px; cursor: pointer; font-size: 11px; width: 100%; font-weight: bold;
+            margin-top: 8px; transition: 0.2s;
+        }
+        .delete-btn:hover { background: #dc2626; }
+
         /* Nhãn bản đồ */
         .map-label {
             background: transparent !important; border: none !important; box-shadow: none !important;
@@ -74,8 +82,8 @@
         <div class="tool-group">
             <label>Lớp ranh giới bản đồ</label>
             <select id="layerSelect">
-                <option value="prov">Cấp Tỉnh / Thành Phố (gadm41_VNM_1.kml)</option>
-                <option value="dist">Cấp Quận / Huyện (gadm41_VNM_2.json)</option>
+                <option value="prov">Cấp Tỉnh / Thành Phố</option>
+                <option value="dist">Cấp Quận / Huyện</option>
             </select>
         </div>
 
@@ -108,11 +116,9 @@
     </div>
 
     <script>
-        // Khởi tạo bản đồ
         const map = L.map('map', { zoomControl: false }).setView([16.047, 105.804], 6);
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
-        // Elements
         const layerSelect = document.getElementById('layerSelect');
         const actionSelect = document.getElementById('actionSelect');
         const colorPickerGroup = document.getElementById('colorPickerGroup');
@@ -122,38 +128,49 @@
         const loader = document.getElementById('loader');
 
         let currentGeoLayer = null;
-        let markersLayer = L.layerGroup().addTo(map); // Chứa các ghim đánh dấu
+        let markersLayer = L.layerGroup().addTo(map); 
 
-        // Ẩn hiện picker màu tùy theo công cụ
         actionSelect.addEventListener('change', (e) => {
             colorPickerGroup.style.display = e.target.value === 'color' ? 'block' : 'none';
         });
 
-        // Hàm áp dụng sự kiện Click và Nhãn cho từng Polygon
+        // Hàm lấy tên thông minh, quét qua nhiều thuộc tính để tránh lỗi NA
+        function extractRegionName(feature, level) {
+            const props = feature.properties;
+            if (!props) return "";
+
+            let name = "";
+            if (level === 'prov') {
+                name = props.NAME_1 || props.name || props.Name || props.VARNAME_1 || "";
+            } else {
+                name = props.NAME_2 || props.name || props.Name || props.VARNAME_2 || "";
+            }
+
+            // Loại trừ các trường hợp dữ liệu hỏng thường gặp trong GADM
+            if (name === "NA" || name === "NaN" || name === "null" || name === "undefined") {
+                return "";
+            }
+            return name;
+        }
+
         function setupFeature(feature, layer) {
-            // Style mặc định
             layer.setStyle({
-                color: "#64748b", weight: 1, fillColor: "#f1f5f9", fillOpacity: 0.5
+                color: "#64748b", weight: 1.5, fillColor: "#f1f5f9", fillOpacity: 0.5
             });
 
-            // Gắn tooltips dựa trên trạng thái bật/tắt
             applyLabelVisibility(feature, layer);
 
-            // Sự kiện Click lên vùng bản đồ
             layer.on('click', function(e) {
                 const action = actionSelect.value;
                 if (action === 'color') {
-                    // Tô màu
                     layer.setStyle({ fillColor: fillColor.value, fillOpacity: 0.8 });
                 } else if (action === 'kc') {
-                    // Ghim Key Customer
-                    let kcValue = prompt("Nhập số liệu cho Key Customer (Hiển thị trong vòng tròn):", "10");
+                    let kcValue = prompt("Nhập số liệu cho Key Customer:", "10");
                     if (kcValue !== null && kcValue.trim() !== "") {
                         let note = prompt("Nhập ghi chú cho Key Customer này:", "Khách hàng VIP");
                         addKCPin(e.latlng, kcValue, note);
                     }
                 } else if (action === 'npp') {
-                    // Ghim Distributor
                     let note = prompt("Tên/Ghi chú cho Distributor (NPP):", "NPP Độc Quyền");
                     if (note !== null) {
                         addNPPPin(e.latlng, note);
@@ -162,24 +179,19 @@
             });
         }
 
-        // Logic ẩn/hiện nhãn riêng lẻ
         function applyLabelVisibility(feature, layer) {
-            const isProvLevel = layerSelect.value === 'prov';
-            const nameProv = feature.properties.NAME_1 || "";
-            const nameDist = feature.properties.NAME_2 || "";
+            const level = layerSelect.value;
+            const regionName = extractRegionName(feature, level);
             
-            // Xóa tooltip cũ nếu có
             layer.unbindTooltip();
 
-            if (isProvLevel && toggleLabelProv.checked && nameProv) {
-                layer.bindTooltip(nameProv, { permanent: true, direction: 'center', className: 'map-label' });
-            } else if (!isProvLevel && toggleLabelDist.checked && nameDist) {
-                // Ở cấp huyện, tùy chỉnh có thể hiện thị cả Tỉnh nếu muốn, ở đây ưu tiên Huyện
-                layer.bindTooltip(nameDist, { permanent: true, direction: 'center', className: 'map-label' });
+            if (level === 'prov' && toggleLabelProv.checked && regionName) {
+                layer.bindTooltip(regionName, { permanent: true, direction: 'center', className: 'map-label' });
+            } else if (level === 'dist' && toggleLabelDist.checked && regionName) {
+                layer.bindTooltip(regionName, { permanent: true, direction: 'center', className: 'map-label' });
             }
         }
 
-        // Cập nhật lại toàn bộ nhãn khi Switch thay đổi
         function refreshLabels() {
             if (currentGeoLayer) {
                 currentGeoLayer.eachLayer(function(layer) {
@@ -191,25 +203,23 @@
         toggleLabelProv.addEventListener('change', refreshLabels);
         toggleLabelDist.addEventListener('change', refreshLabels);
 
-        // Nạp dữ liệu bản đồ
         function loadMapLayer(type) {
             if (currentGeoLayer) map.removeLayer(currentGeoLayer);
             loader.style.display = 'block';
 
             if (type === 'prov') {
-                // Tải file KML (sử dụng omnivore)
                 currentGeoLayer = omnivore.kml('gadm41_VNM_1.kml')
                     .on('ready', function() {
                         this.eachLayer(function(layer) { setupFeature(layer.feature, layer); });
                         loader.style.display = 'none';
+                        refreshLabels();
                     })
                     .on('error', function() {
-                        alert('Không tìm thấy hoặc không thể đọc gadm41_VNM_1.kml. Vui lòng đảm bảo file nằm cùng thư mục.');
+                        alert('Không tìm thấy gadm41_VNM_1.kml. Vui lòng đảm bảo file nằm cùng thư mục.');
                         loader.style.display = 'none';
                     })
                     .addTo(map);
             } else {
-                // Tải file JSON
                 fetch('gadm41_VNM_2.json')
                     .then(res => res.json())
                     .then(data => {
@@ -217,45 +227,68 @@
                             onEachFeature: setupFeature
                         }).addTo(map);
                         loader.style.display = 'none';
+                        refreshLabels();
                     })
                     .catch(err => {
-                        alert('Không tìm thấy hoặc không thể đọc gadm41_VNM_2.json. Vui lòng đảm bảo file nằm cùng thư mục.');
+                        alert('Không tìm thấy gadm41_VNM_2.json. Vui lòng đảm bảo file nằm cùng thư mục.');
                         loader.style.display = 'none';
                     });
             }
         }
 
-        // Thêm Ghim Key Customer (Vòng tròn trắng viền xanh)
+        // --- GLOBAL FUNCTION ĐỂ XÓA GHIM TỪ TRONG POPUP ---
+        window.deleteMarker = function(markerId) {
+            markersLayer.eachLayer(layer => {
+                if (layer.options.customId === markerId) {
+                    markersLayer.removeLayer(layer);
+                }
+            });
+        };
+
         function addKCPin(latlng, value, note) {
+            let uniqueId = Date.now();
             let icon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="kc-pin" style="width: 24px; height: 24px;">${value}</div>`,
                 iconSize: [28, 28],
                 iconAnchor: [14, 14]
             });
-            let marker = L.marker(latlng, { icon: icon }).addTo(markersLayer);
-            if (note) { marker.bindPopup(`<b>Key Customer (${value})</b><br>${note}`); }
+
+            let marker = L.marker(latlng, { icon: icon, customId: uniqueId }).addTo(markersLayer);
             
-            // Xóa marker khi nháy đúp
+            let popupHtml = `
+                <div style="text-align: center; min-width: 120px;">
+                    <b style="color: #0047ab; font-size: 13px;">Key Customer (${value})</b><br>
+                    <span style="color: #475569; font-size: 12px;">${note || ''}</span>
+                    <button class="delete-btn" onclick="deleteMarker(${uniqueId})">🗑️ Xóa ghim này</button>
+                </div>
+            `;
+            marker.bindPopup(popupHtml);
             marker.on('dblclick', () => { markersLayer.removeLayer(marker); });
         }
 
-        // Thêm Ghim Distributor (Ngôi sao vàng)
         function addNPPPin(latlng, note) {
+            let uniqueId = Date.now();
             let icon = L.divIcon({
                 className: 'custom-div-icon',
                 html: `<div class="npp-pin">⭐</div>`,
                 iconSize: [30, 30],
                 iconAnchor: [15, 15]
             });
-            let marker = L.marker(latlng, { icon: icon }).addTo(markersLayer);
-            if (note) { marker.bindPopup(`<b>Nhà Phân Phối</b><br>${note}`); }
 
-            // Xóa marker khi nháy đúp
+            let marker = L.marker(latlng, { icon: icon, customId: uniqueId }).addTo(markersLayer);
+            
+            let popupHtml = `
+                <div style="text-align: center; min-width: 120px;">
+                    <b style="color: #ea580c; font-size: 13px;">Nhà Phân Phối</b><br>
+                    <span style="color: #475569; font-size: 12px;">${note || ''}</span>
+                    <button class="delete-btn" onclick="deleteMarker(${uniqueId})">🗑️ Xóa ghim này</button>
+                </div>
+            `;
+            marker.bindPopup(popupHtml);
             marker.on('dblclick', () => { markersLayer.removeLayer(marker); });
         }
 
-        // Nếu click ra ngoài biển (không chạm polygon) mà vẫn muốn ghim:
         map.on('click', function(e) {
             const action = actionSelect.value;
             if (action === 'kc') {
@@ -267,7 +300,6 @@
             }
         });
 
-        // Trigger load file map lần đầu
         layerSelect.addEventListener('change', (e) => loadMapLayer(e.target.value));
         loadMapLayer('prov');
 
