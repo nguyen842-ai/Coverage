@@ -3,16 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Công Cụ Bản Đồ </title>
+    <title>Công Cụ Bản Đồ</title>
     
-    <!-- Leaflet CSS & JS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Plugin để đọc file KML -->
     <script src="https://unpkg.com/leaflet-omnivore@0.3.4/leaflet-omnivore.min.js"></script>
-    <!-- Plugin đọc Excel (SheetJS) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <!-- Thư viện Xuất Hình Ảnh (html2canvas) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     
     <style>
@@ -128,6 +124,13 @@
         </div>
 
         <div class="tool-group">
+            <label>Lọc hiển thị theo Tỉnh / Thành Phố</label>
+            <select id="provinceFilter">
+                <option value="ALL">-- Hiển thị tất cả --</option>
+            </select>
+        </div>
+
+        <div class="tool-group">
             <label>Công cụ tương tác (Thủ công)</label>
             <select id="actionSelect">
                 <option value="color">🖌️ Tô màu vùng & Ranh giới</option>
@@ -148,7 +151,6 @@
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <!-- AUTO EXCEL UPLOAD TOOL -->
         <div class="tool-group">
             <label>Tô màu Tự Động bằng Excel</label>
             <div class="excel-upload-wrapper">
@@ -160,18 +162,15 @@
                 </div>
             </div>
             
-            <!-- NÚT HỖ TRỢ XUẤT TÊN CHUẨN -->
             <button class="export-btn blue" id="downloadNamesBtn" title="Tải file Excel chứa danh sách các tên vùng khớp 100% với bản đồ">
                 📥 Tải File Tên Chuẩn (Excel)
             </button>
 
-            <!-- KHUNG BÁO CÁO LỖI KHÔNG KHỚP DỮ LIỆU -->
             <div id="unmatchedReport" class="unmatched-report"></div>
         </div>
 
         <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 15px 0;">
 
-        <!-- HIGH-RES IMAGE EXPORT TOOL -->
         <div class="tool-group">
             <label>Xuất bản đồ thành hình ảnh</label>
             <button class="export-btn green" id="exportBtn">📸 Xuất ảnh Siêu Nét (5x Ultra-HD)</button>
@@ -202,6 +201,7 @@
         L.control.zoom({ position: 'bottomleft' }).addTo(map);
 
         const layerSelect = document.getElementById('layerSelect');
+        const provinceFilter = document.getElementById('provinceFilter');
         const actionSelect = document.getElementById('actionSelect');
         const colorPickerGroup = document.getElementById('colorPickerGroup');
         const borderColorPickerGroup = document.getElementById('borderColorPickerGroup');
@@ -246,6 +246,80 @@
             return name.trim();
         }
 
+        // Hàm trích xuất tên Tỉnh/Thành phố chuẩn để phục vụ bộ lọc
+        function getProvNameForFilter(feature, level) {
+            const p = feature.properties;
+            if (!p) return "";
+            if (level === 'prov') {
+                return (p.GID_0 || p.COUNTRY || p.name || p.NAME_1 || "").trim();
+            } else {
+                // Ở cấp Quận/Huyện, tên Tỉnh thường lưu ở COUNTRY hoặc GID_0 (dựa theo logic trích xuất của bạn)
+                return (p.COUNTRY || p.GID_0 || p.NAME_1 || "").trim();
+            }
+        }
+
+        // Đổ dữ liệu Tỉnh/Thành vào Select Option
+        function populateProvinceFilter() {
+            let provSet = new Set();
+            if (currentGeoLayer) {
+                currentGeoLayer.eachLayer(function(layer) {
+                    let provName = getProvNameForFilter(layer.feature, layerSelect.value);
+                    if (provName && provName !== "NA") provSet.add(provName);
+                });
+            }
+            
+            let currentVal = provinceFilter.value;
+            provinceFilter.innerHTML = '<option value="ALL">-- Hiển thị tất cả --</option>';
+            
+            Array.from(provSet).sort().forEach(prov => {
+                let opt = document.createElement('option');
+                opt.value = prov;
+                opt.innerText = prov;
+                provinceFilter.appendChild(opt);
+            });
+
+            // Giữ nguyên tỉnh đang lọc nếu chuyển đổi lớp bản đồ
+            if (Array.from(provinceFilter.options).some(opt => opt.value === currentVal)) {
+                provinceFilter.value = currentVal;
+            } else {
+                provinceFilter.value = "ALL";
+            }
+        }
+
+        // Logic xử lý ẩn/hiện vùng theo bộ lọc
+        function applyProvinceFilter() {
+            const selectedProv = provinceFilter.value;
+            if (!currentGeoLayer) return;
+
+            currentGeoLayer.eachLayer(function(layer) {
+                const provName = getProvNameForFilter(layer.feature, layerSelect.value);
+                
+                if (selectedProv === "ALL" || provName === selectedProv) {
+                    layer.options.isHidden = false;
+                    // Hiển thị lại layer với style tiêu chuẩn
+                    layer.setStyle({ 
+                        stroke: true, 
+                        color: currentBorderColor, 
+                        weight: 1.5, 
+                        fill: true, 
+                        fillColor: layer.options.fillColor || "#f1f5f9", 
+                        fillOpacity: layer.options.fillColor ? 0.8 : 0.5 
+                    });
+                    if (layer._path) layer._path.style.pointerEvents = 'auto'; // Cho phép click lại
+                    applyLabelVisibility(layer.feature, layer); // Kích hoạt lại nhãn
+                } else {
+                    layer.options.isHidden = true;
+                    // Xoá nét vẽ & fill để ẩn hoàn toàn layer này
+                    layer.setStyle({ stroke: false, fill: false });
+                    layer.unbindTooltip(); // Gỡ nhãn
+                    if (layer._path) layer._path.style.pointerEvents = 'none'; // Chặn click vào layer tàng hình
+                }
+            });
+        }
+
+        // Lắng nghe sự kiện thay đổi trên bộ lọc Tỉnh/Thành
+        provinceFilter.addEventListener('change', applyProvinceFilter);
+
         function getMatchKey(str) {
             if (!str) return "";
             let n = str.toString().toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/đ/g, "d");
@@ -257,6 +331,7 @@
         }
 
         function applyFeatureStyle(layer, isSelectedForColoring = false) {
+            if (layer.options.isHidden) return; // Không đổi màu nếu layer đang bị ẩn bởi bộ lọc
             layer.setStyle({
                 color: currentBorderColor, 
                 weight: 1.5, 
@@ -270,6 +345,8 @@
             applyLabelVisibility(feature, layer);
 
             layer.on('click', function(e) {
+                if (layer.options.isHidden) return; // Chặn sự kiện click nếu vùng bị ẩn
+                
                 const action = actionSelect.value;
                 if (action === 'color') {
                     applyFeatureStyle(layer, true);
@@ -292,15 +369,18 @@
         function updateMapBorderColors() {
             if (currentGeoLayer) {
                 currentGeoLayer.eachLayer(function(layer) {
-                    if (layer.feature) layer.setStyle({ color: currentBorderColor });
+                    if (layer.feature && !layer.options.isHidden) layer.setStyle({ color: currentBorderColor });
                 });
             }
         }
 
         function applyLabelVisibility(feature, layer) {
+            if (layer.options.isHidden) return; // Không gán nhãn nếu layer đang ẩn
+
             const level = layerSelect.value;
             const regionName = extractRegionName(feature, level);
             layer.unbindTooltip();
+            
             if ((level === 'prov' && toggleLabelProv.checked) || (level === 'dist' && toggleLabelDist.checked)) {
                 if (regionName) {
                     let offset = [0, 0];
@@ -318,7 +398,7 @@
         function refreshLabels() {
             if (currentGeoLayer) {
                 currentGeoLayer.eachLayer(function(layer) {
-                    if (layer.feature) applyLabelVisibility(layer.feature, layer);
+                    if (layer.feature && !layer.options.isHidden) applyLabelVisibility(layer.feature, layer);
                 });
             }
         }
@@ -336,6 +416,8 @@
                     .on('ready', function() {
                         this.eachLayer(function(layer) { setupFeature(layer.feature, layer); });
                         loader.style.display = 'none';
+                        populateProvinceFilter(); // Chạy hàm gom Tỉnh/Thành
+                        applyProvinceFilter();    // Áp dụng lọc ngay lập tức
                         updateMapBorderColors();
                         refreshLabels();
                     })
@@ -350,6 +432,8 @@
                     .then(data => {
                         currentGeoLayer = L.geoJSON(data, { onEachFeature: setupFeature }).addTo(map);
                         loader.style.display = 'none';
+                        populateProvinceFilter(); // Chạy hàm gom Tỉnh/Thành
+                        applyProvinceFilter();    // Áp dụng lọc ngay lập tức
                         updateMapBorderColors();
                         refreshLabels();
                     })
@@ -488,10 +572,13 @@
 
                             if (finalColor) {
                                 layer.options.fillColor = finalColor;
-                                layer.setStyle({
-                                    fillColor: finalColor,
-                                    fillOpacity: 0.8
-                                });
+                                // Nếu vùng bị ẩn, không cập nhật style hiện tại nhưng vẫn lưu options.fillColor để khi filter bật lại thì tô đúng màu.
+                                if (!layer.options.isHidden) {
+                                    layer.setStyle({
+                                        fillColor: finalColor,
+                                        fillOpacity: 0.8
+                                    });
+                                }
                                 matchCount++;
                             }
                         }
@@ -512,9 +599,7 @@
                         unmatchedReport.style.display = "block";
                     }
 
-                    alert(`Đã hoàn tất tô màu tự động!
-- Khớp thành công: ${matchCount} vùng
-- Không khớp được: ${unmatchedCount} mục.`);
+                    alert(`Đã hoàn tất tô màu tự động!\n- Khớp thành công: ${matchCount} vùng\n- Không khớp được: ${unmatchedCount} mục.`);
                 }
                 loader.style.display = 'none';
                 excelFile.value = ""; 
@@ -522,7 +607,7 @@
             reader.readAsArrayBuffer(file);
         });
 
-        // --- XUẤT HÌNH ẢNH SIÊU NÉT (ĐÃ BỎ ZOOM CHỮ LÀM VỠ LAYOUT) ---
+        // --- XUẤT HÌNH ẢNH SIÊU NÉT ---
         exportBtn.addEventListener('click', function() {
             loader.style.display = 'block';
             loader.innerText = 'Đang kết xuất hình ảnh 5x Ultra-HD...';
